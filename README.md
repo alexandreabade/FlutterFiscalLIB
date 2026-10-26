@@ -283,5 +283,10 @@ o [SECURITY.md](SECURITY.md) para reportar vulnerabilidades.
 
 Projeto criado por **Alexandre Abade**.
 
+## Contato
+
+- LinkedIn: [Alexandre Abade](https://www.linkedin.com/in/alexandre-abade-92aa9b96/details/experience/)
+- WhatsApp: [55 69 99387-7484](https://wa.me/5569993877484)
+
 Distribuído sob a licença MIT. Consulte o arquivo [LICENSE](LICENSE).
 
