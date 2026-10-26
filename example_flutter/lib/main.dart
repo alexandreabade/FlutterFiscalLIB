@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_fiscal_lib/flutter_fiscal_lib.dart';
+import 'package:file_selector/file_selector.dart';
 
 import 'offline_database.dart';
 
@@ -47,6 +48,7 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
   final _certificatePasswordController = TextEditingController();
   final _cscIdController = TextEditingController();
   final _cscController = TextEditingController();
+  XFile? _selectedCertificateFile;
   NfeDocument? _document;
   PfxIdentity? _certificateIdentity;
   int _environment = 2;
@@ -201,10 +203,13 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
       return;
     }
     try {
-      final identity = await PfxIdentity.fromPfxFile(
-        path: path,
-        password: password,
-      );
+      final selectedFile = _selectedCertificateFile;
+      final identity = selectedFile == null
+          ? await PfxIdentity.fromPfxFile(path: path, password: password)
+          : PfxIdentity.fromPfx(
+              bytes: await selectedFile.readAsBytes(),
+              password: password,
+            );
       if (mounted) {
         setState(() {
           _certificateIdentity = identity;
@@ -216,6 +221,20 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
     } on Object catch (error) {
       _showMessage('Falha ao carregar certificado: $error');
     }
+  }
+
+  Future<void> _selectCertificateFile() async {
+    final file = await openFile(
+      acceptedTypeGroups: const [
+        XTypeGroup(label: 'Certificado A1', extensions: ['pfx', 'p12']),
+      ],
+    );
+    if (file == null || !mounted) return;
+    setState(() {
+      _selectedCertificateFile = file;
+      _certificatePathController.text = file.path;
+      _status = 'Arquivo selecionado: ${file.name}';
+    });
   }
 
   Future<void> _consultServiceStatus() async {
@@ -363,9 +382,15 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
               ),
               TextField(
                 controller: _certificatePathController,
+                readOnly: true,
                 decoration: const InputDecoration(
                   labelText: 'Caminho do certificado A1',
                 ),
+              ),
+              OutlinedButton.icon(
+                onPressed: _selectCertificateFile,
+                icon: const Icon(Icons.folder_open_outlined),
+                label: const Text('Escolher arquivo PFX/P12'),
               ),
               TextField(
                 controller: _certificatePasswordController,

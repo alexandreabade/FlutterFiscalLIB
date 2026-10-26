@@ -28,8 +28,8 @@
 		33CC10F32044A3C60003C045 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F22044A3C60003C045 /* Assets.xcassets */; };
 		33CC10F62044A3C60003C045 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F42044A3C60003C045 /* MainMenu.xib */; };
 		33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC11122044BFA00003C045 /* MainFlutterWindow.swift */; };
-		40A9E4C42B4F4C5B9C68A001 /* XsdValidator.m in Sources */ = {isa = PBXBuildFile; fileRef = 40A9E4C02B4F4C5B9C68A001 /* XsdValidator.m */; };
 		40A9E4C32B4F4C5B9C68A001 /* XsdPlatformChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40A9E4C22B4F4C5B9C68A001 /* XsdPlatformChannel.swift */; };
+		40A9E4C42B4F4C5B9C68A001 /* XsdValidator.m in Sources */ = {isa = PBXBuildFile; fileRef = 40A9E4C02B4F4C5B9C68A001 /* XsdValidator.m */; };
 		9F805C796F3CF8D44FF3B1A7 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F5110B9D56CA96E256140E85 /* Pods_Runner.framework */; };
 /* End PBXBuildFile section */
 
@@ -75,15 +75,15 @@
 		33CC10F52044A3C60003C045 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		33CC10F72044A3C60003C045 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Runner/Info.plist; sourceTree = "<group>"; };
 		33CC11122044BFA00003C045 /* MainFlutterWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainFlutterWindow.swift; sourceTree = "<group>"; };
-		40A9E4C02B4F4C5B9C68A001 /* XsdValidator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XsdValidator.m; sourceTree = "<group>"; };
-		40A9E4C12B4F4C5B9C68A001 /* XsdValidator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XsdValidator.h; sourceTree = "<group>"; };
-		40A9E4C22B4F4C5B9C68A001 /* XsdPlatformChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XsdPlatformChannel.swift; sourceTree = "<group>"; };
 		33CEB47222A05771004F2AC0 /* Flutter-Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Flutter-Debug.xcconfig"; sourceTree = "<group>"; };
 		33CEB47422A05771004F2AC0 /* Flutter-Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "Flutter-Release.xcconfig"; sourceTree = "<group>"; };
 		33CEB47722A0578A004F2AC0 /* Flutter-Generated.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "Flutter-Generated.xcconfig"; path = "ephemeral/Flutter-Generated.xcconfig"; sourceTree = "<group>"; };
 		33E51913231747F40026EE4D /* DebugProfile.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DebugProfile.entitlements; sourceTree = "<group>"; };
 		33E51914231749380026EE4D /* Release.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = Release.entitlements; sourceTree = "<group>"; };
 		33E5194F232828860026EE4D /* AppInfo.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = AppInfo.xcconfig; sourceTree = "<group>"; };
+		40A9E4C02B4F4C5B9C68A001 /* XsdValidator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XsdValidator.m; sourceTree = "<group>"; };
+		40A9E4C12B4F4C5B9C68A001 /* XsdValidator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XsdValidator.h; sourceTree = "<group>"; };
+		40A9E4C22B4F4C5B9C68A001 /* XsdPlatformChannel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XsdPlatformChannel.swift; sourceTree = "<group>"; };
 		50E02D7CD193D6202F277E4F /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 		62682A0D5CDAAE2FD5F000F3 /* Pods_RunnerTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RunnerTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
@@ -248,6 +248,7 @@
 				33CC10EB2044A3C60003C045 /* Resources */,
 				33CC110E2044A8840003C045 /* Bundle Framework */,
 				3399D490228B24CF009A79C7 /* ShellScript */,
+				B418CC353EFE6F379180FCA3 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -410,6 +411,23 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		B418CC353EFE6F379180FCA3 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -704,8 +722,8 @@
 					"@executable_path/../Frameworks",
 				);
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = Runner/XsdValidator.h;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_OBJC_BRIDGING_HEADER = "Runner/XsdValidator.h";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -725,7 +743,7 @@
 					"@executable_path/../Frameworks",
 				);
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SWIFT_OBJC_BRIDGING_HEADER = "Runner/XsdValidator.h";
+				SWIFT_OBJC_BRIDGING_HEADER = Runner/XsdValidator.h;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
