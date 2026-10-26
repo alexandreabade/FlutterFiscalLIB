@@ -187,12 +187,21 @@ class IoSefazTransport implements SefazTransport {
       );
     }
     final httpRequest = await _client.postUrl(request.url);
-    httpRequest.headers.contentType =
-        request.soapVersion == SefazSoapVersion.soap12
-        ? ContentType('application', 'soap+xml', charset: 'utf-8')
-        : ContentType('text', 'xml', charset: 'utf-8');
-    if (request.action != null) {
-      httpRequest.headers.set('SOAPAction', request.action!);
+    if (request.soapVersion == SefazSoapVersion.soap12) {
+      final action = request.action;
+      final contentType = action == null
+          ? 'application/soap+xml; charset=utf-8'
+          : 'application/soap+xml; charset=utf-8; action="$action"';
+      httpRequest.headers.set(HttpHeaders.contentTypeHeader, contentType);
+    } else {
+      httpRequest.headers.contentType = ContentType(
+        'text',
+        'xml',
+        charset: 'utf-8',
+      );
+      if (request.action != null) {
+        httpRequest.headers.set('SOAPAction', '"${request.action}"');
+      }
     }
     httpRequest.write(request.body);
     final response = await httpRequest.close();
