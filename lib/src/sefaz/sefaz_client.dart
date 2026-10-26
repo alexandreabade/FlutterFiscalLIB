@@ -500,8 +500,8 @@ class SefazClient {
               '${base64Encode(gzip.encode(utf8.encode(xml)))}</nfeDadosMsgZip>'
         : wrapInNfeDadosMsg
         ? '<nfeDadosMsg xmlns="$nfeDadosMsgNamespace">'
-              '$xml</nfeDadosMsg>'
-        : xml;
+              '${_compactXml(xml)}</nfeDadosMsg>'
+        : _compactXml(xml);
     final envelope = soapVersion == SefazSoapVersion.soap12
         ? '''<?xml version="1.0" encoding="UTF-8"?>
 <soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
@@ -567,6 +567,11 @@ class SefazClient {
       );
     }
   }
+
+  /// Remove whitespace estrutural entre tags, exigido por alguns endpoints
+  /// SOAP da SEFAZ que validam o XML fiscal de forma estrita.
+  String _compactXml(String xml) =>
+      xml.trim().replaceAll(RegExp(r'>\s+<'), '><');
 
   /// Consulta a situação de uma NF-e por chave de acesso.
   Future<SefazResponse> sefazConsultaChave(

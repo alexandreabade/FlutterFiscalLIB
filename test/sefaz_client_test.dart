@@ -161,6 +161,7 @@ void main() {
     );
     expect(transport.request!.body, contains('<cUF>11</cUF>'));
     expect(transport.request!.body, isNot(contains('<soap12:Header>')));
+    expect(transport.request!.body, isNot(contains('> <')));
   });
 
   test(
