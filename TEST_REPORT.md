@@ -1,5 +1,24 @@
 # Relatório de testes
 
+## Estado atual — 26/10/2026
+
+Após a última rodada de compatibilidade, `dart analyze` terminou sem issues e
+`dart test --concurrency=1` aprovou 373 testes; apenas o teste opt-in de
+homologação real da SEFAZ foi ignorado por ausência de certificado, endpoint e
+credenciais externos.
+
+O inventário atual do `Tools.php` foi comparado com a fachada Dart sem métodos
+ausentes. Os 18 códigos de evento da referência estão cobertos, incluindo
+manifestação (`210200`, `210210`, `210220`, `210240`), CC-e/cancelamentos,
+EPEC, ator interessado, comprovante e cancelamento (`110130`/`110131`),
+prorrogação, insucesso e conciliação financeira.
+
+`dart pub publish --dry-run` terminou com 0 avisos e o pacote foi validado com
+544 KB comprimidos. A tentativa do smoke test em iPhone físico conectado por
+rede foi bloqueada pelo Flutter antes de iniciar o app, pois o subcomando
+`flutter test` não aceita `--publish-port`; isso permanece como limitação de
+execução do dispositivo, não como falha do código Dart.
+
 ## Auditoria reproduzível mais recente
 
 Em 26/10/2026, os verificadores foram executados contra o checkout do
