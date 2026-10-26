@@ -10,3 +10,29 @@ pubspec.lock
 /output/
 /tmp/
 
+# Credenciais e certificados locais: nunca versionar.
+*.p12
+*.pfx
+*.pem
+*.key
+*.cer
+*.crt
+*.jks
+.env
+.env.*
+!.env.example
+*credentials*.json
+*secrets*.json
+*secret*.json
+*csc*.txt
+
+# Configuração e saídas locais do exemplo Flutter.
+flutter_fiscal_lib_demo.json
+example_flutter/saidas/
+example_flutter/outputs/
+example_flutter/Documentos/
+*.bin
+
+# Arquivos do sistema operacional.
+.DS_Store
+
