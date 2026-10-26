@@ -69,9 +69,42 @@ class NfeEmissionService {
         code: 'DOCUMENT_MODEL_MISMATCH',
       );
     }
+    return authorizeSigned(
+      document,
+      await buildAndSign(document),
+      client: client,
+      lotId: lotId,
+      synchronous: synchronous,
+      parser: parser,
+    );
+  }
+
+  /// Autoriza um XML já assinado, permitindo que a aplicação injete o QR Code
+  /// da NFC-e entre a assinatura e o envio.
+  Future<SefazResult> authorizeSigned(
+    NfeDocument document,
+    String signedXml, {
+    required SefazClient client,
+    String lotId = '1',
+    int synchronous = 1,
+    SefazResponseParser parser = const SefazResponseParser(),
+  }) async {
+    if (document.contingency?.mode == ContingencyMode.offlineNfce) {
+      throw const FiscalValidationException(
+        'NFC-e offline deve ser persistida na fila e transmitida posteriormente; '
+        'não pode ser autorizada pelo fluxo online.',
+        code: 'OFFLINE_DOCUMENT_REQUIRES_QUEUE',
+      );
+    }
+    if (document.model != client.model) {
+      throw const FiscalValidationException(
+        'O modelo do documento não corresponde ao modelo configurado no cliente SEFAZ.',
+        code: 'DOCUMENT_MODEL_MISMATCH',
+      );
+    }
     final response = await client.sefazEnviaLote(
       lotId,
-      await buildAndSign(document),
+      signedXml,
       synchronous: synchronous,
     );
     return parser.parse(response.body);

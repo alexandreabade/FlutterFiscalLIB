@@ -300,6 +300,143 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
     }
   }
 
+  Future<void> _generateAndAuthorizeNfce() async {
+    final identity = _certificateIdentity;
+    if (identity == null) {
+      _showMessage('Carregue o certificado A1 antes de emitir a NFC-e.');
+      return;
+    }
+    final cscId = int.tryParse(_cscIdController.text.trim());
+    final csc = _cscController.text.trim();
+    if (cscId == null || cscId < 1 || csc.isEmpty) {
+      _showMessage(
+        'Informe o ID CSC e o CSC de homologação da empresa antes de emitir.',
+      );
+      return;
+    }
+    if (_environment != 2) {
+      _showMessage(
+        'Este botão de teste envia somente para homologação. Selecione esse ambiente.',
+      );
+      return;
+    }
+    try {
+      final company = _companyFromForm();
+      final database = await _database;
+      final documentNumber = await DriftFiscalNumberAllocator(database).reserve(
+        cUf: company.cUf,
+        issuerCnpj: company.cnpj,
+        model: 65,
+        series: 1,
+      );
+      final issueDate = DateTime.now();
+      final accessKey = AccessKey.fromComponents(
+        cUf: company.cUf,
+        issueDate: issueDate,
+        cnpj: company.cnpj,
+        model: 65,
+        series: 1,
+        number: documentNumber,
+        tpEmis: 1,
+        cNf: documentNumber.toString().padLeft(8, '0'),
+      ).value;
+      final qrCode = company.nfceOnlineQrCode(
+        accessKey: accessKey,
+        environment: 2,
+        cscId: cscId,
+        csc: csc,
+      );
+      final document = NfeDocument(
+        accessKey: accessKey,
+        number: documentNumber,
+        series: 1,
+        issueDate: issueDate,
+        environment: 2,
+        model: 65,
+        operationNature: 'Venda de mercadoria',
+        documentType: 1,
+        destinationType: 1,
+        printFormat: 4,
+        purpose: 1,
+        finalConsumer: 1,
+        presenceIndicator: 1,
+        processCode: '0',
+        applicationVersion: '0.1.0',
+        issuer: company.party,
+        items: [
+          NfeItem(
+            number: 1,
+            code: 'DEMO-001',
+            description: _productController.text.trim(),
+            ncm: '12345678',
+            cfop: '5102',
+            unit: 'UN',
+            quantity: 1,
+            unitPrice: 10,
+            icmsSimples: const IcmsSimplesTax(csosn: '102'),
+          ),
+        ],
+        payments: const [Payment(type: '01', value: 10)],
+        nfceSupplement: NfceXmlSupplement(
+          qrCode: qrCode.url,
+          keyUrl: company.nfceQrCodeUrl(environment: 2).toString(),
+        ),
+      );
+      final emission = NfeEmissionService(
+        signer: XmlSignatureService.fromPfx(identity),
+      );
+      final signedXml = await emission.buildAndSign(document);
+      final config = company.sefazConfig(
+        model: 65,
+        environment: 2,
+        certificate: identity,
+        trustedCertificates: [utf8.encode(serproSslV1Certificate)],
+      );
+      final response = await SefazClient.fromConfig(
+        config,
+      ).sefazEnviaLote('$documentNumber', signedXml, synchronous: 1);
+      final result = const SefazResponseParser().parse(response.body);
+      if (!result.isAuthorized) {
+        throw FiscalException(
+          'A SEFAZ não autorizou a NFC-e: cStat ${result.statusCode} — ${result.reason}',
+          code: 'NFCE_NOT_AUTHORIZED',
+        );
+      }
+      final pdf = await DanfePdfRenderer().render(
+        document,
+        layout: DanfePdfLayout.a4,
+      );
+      final pdfPath = await _saveOutput(
+        pdf,
+        format: FiscalOutputFormat.pdf,
+        fileName: 'nfce-autorizada-${document.accessKey}.pdf',
+      );
+      if (mounted) {
+        setState(() {
+          _document = document;
+          _xml = signedXml;
+          _sefazResponseXml = response.body;
+          _sefazHttpStatus = response.statusCode;
+          _sefazResult = result;
+          _sefazTechnicalError = null;
+          _status =
+              'NFC-e autorizada: cStat ${result.statusCode} — ${result.reason}. PDF A4: $pdfPath';
+          _history.insert(
+            0,
+            'NFC-e ${document.accessKey} autorizada; protocolo ${result.protocol ?? 'não informado'}',
+          );
+        });
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        setState(() {
+          _status = _friendlyErrorMessage(error);
+          _history.insert(0, 'Falha na emissão NFC-e: $_status');
+        });
+      }
+    }
+  }
+
   Future<void> _renderDanfe() async {
     final document = _document;
     if (document == null) {
@@ -785,6 +922,11 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
               ),
             ),
             const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: _generateAndAuthorizeNfce,
+              icon: const Icon(Icons.receipt_long_outlined),
+              label: const Text('Gerar, autorizar NFC-e teste e emitir PDF A4'),
+            ),
             ElevatedButton(
               onPressed: _queue == null ? null : _generateXml,
               child: const Text('Gerar e persistir NFC-e offline'),
