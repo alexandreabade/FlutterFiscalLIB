@@ -14,6 +14,7 @@ void main() {
     expect(find.text('Gerar e persistir NFC-e offline'), findsOneWidget);
     expect(find.text('Configuração da demonstração'), findsOneWidget);
     expect(find.text('Carregar certificado A1'), findsOneWidget);
+    expect(find.text('Consultar status do serviço'), findsOneWidget);
     expect(find.text('Visualizar DANFE HTML'), findsOneWidget);
     expect(find.text('Preparar cupom ESC/POS'), findsOneWidget);
     expect(find.text('Preparar PDF DANFE'), findsOneWidget);

@@ -48,6 +48,7 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
   final _cscIdController = TextEditingController();
   final _cscController = TextEditingController();
   NfeDocument? _document;
+  PfxIdentity? _certificateIdentity;
   int _environment = 2;
   late final Future<ExampleFiscalDatabase> _database;
   NfceOfflineQueue? _queue;
@@ -206,6 +207,7 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
       );
       if (mounted) {
         setState(() {
+          _certificateIdentity = identity;
           _status =
               'Certificado A1 carregado: ${identity.getCompanyName() ?? 'emitente não identificado'}.';
           _history.insert(0, 'Certificado A1 carregado em memória');
@@ -213,6 +215,44 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
       }
     } on Object catch (error) {
       _showMessage('Falha ao carregar certificado: $error');
+    }
+  }
+
+  Future<void> _consultServiceStatus() async {
+    final identity = _certificateIdentity;
+    if (identity == null) {
+      _showMessage('Carregue um certificado A1 antes de consultar o status.');
+      return;
+    }
+    if (mounted) {
+      setState(() => _status = 'Consultando status da SEFAZ...');
+    }
+    try {
+      final config = SefazEndpointCatalog.clientConfig(
+        uf: 'RO',
+        model: 65,
+        environment: _environment,
+        certificate: identity,
+      );
+      final client = SefazClient.fromConfig(config);
+      final response = await client.sefazStatusServico(
+        cUf: '11',
+        environment: _environment,
+      );
+      if (mounted) {
+        setState(() {
+          _status =
+              'Status SEFAZ: HTTP ${response.statusCode} — ${response.body}';
+          _history.insert(
+            0,
+            'Consulta de status realizada (${_environment == 1 ? 'produção' : 'homologação'})',
+          );
+        });
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        setState(() => _status = 'Falha na consulta de status: $error');
+      }
     }
   }
 
@@ -338,6 +378,11 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
               OutlinedButton(
                 onPressed: _loadCertificate,
                 child: const Text('Carregar certificado A1'),
+              ),
+              OutlinedButton.icon(
+                onPressed: _consultServiceStatus,
+                icon: const Icon(Icons.cloud_outlined),
+                label: const Text('Consultar status do serviço'),
               ),
               Text(_status),
               const SizedBox(height: 12),
