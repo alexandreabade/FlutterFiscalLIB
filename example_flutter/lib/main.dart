@@ -43,7 +43,20 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
   final _issuerNameController = TextEditingController(
     text: 'Empresa de Demonstração',
   );
+  final _fantasyNameController = TextEditingController(
+    text: 'Mercado Demonstração',
+  );
   final _issuerCnpjController = TextEditingController(text: '04252011000110');
+  final _issuerIeController = TextEditingController(text: '123456789');
+  final _addressController = TextEditingController(text: 'Rua Fiscal');
+  final _addressNumberController = TextEditingController(text: '1');
+  final _neighborhoodController = TextEditingController(text: 'Centro');
+  final _cityCodeController = TextEditingController(text: '1100015');
+  final _cityController = TextEditingController(text: 'Alta Floresta D Oeste');
+  final _zipCodeController = TextEditingController(text: '76954000');
+  final _phoneController = TextEditingController(text: '69999999999');
+  final _emailController = TextEditingController(text: 'fiscal@empresa.test');
+  final _crtController = TextEditingController(text: '1');
   final _productController = TextEditingController(
     text: 'Produto de demonstração',
   );
@@ -55,6 +68,37 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
   NfeDocument? _document;
   PfxIdentity? _certificateIdentity;
   int _environment = 2;
+  String _uf = 'RO';
+
+  static const _ufCodes = <String, String>{
+    'AC': '12',
+    'AL': '27',
+    'AP': '16',
+    'AM': '13',
+    'BA': '29',
+    'CE': '23',
+    'DF': '53',
+    'ES': '32',
+    'GO': '52',
+    'MA': '21',
+    'MT': '51',
+    'MS': '50',
+    'MG': '31',
+    'PA': '15',
+    'PB': '25',
+    'PR': '41',
+    'PE': '26',
+    'PI': '22',
+    'RJ': '33',
+    'RN': '24',
+    'RS': '43',
+    'RO': '11',
+    'RR': '14',
+    'SC': '42',
+    'SP': '35',
+    'SE': '28',
+    'TO': '17',
+  };
   late final Future<ExampleFiscalDatabase> _database;
   NfceOfflineQueue? _queue;
   int _pendingCount = 0;
@@ -72,19 +116,24 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
   Future<void> _generateXml() async {
     final queue = _queue;
     if (queue == null) return;
-    final issuerName = _issuerNameController.text.trim();
-    final issuerCnpj = _issuerCnpjController.text.trim();
+    late final FiscalCompanyRegistration company;
+    try {
+      company = _companyFromForm();
+    } on Object catch (error) {
+      _showMessage('Cadastro inválido: $error');
+      return;
+    }
     final productDescription = _productController.text.trim();
     final issueDate = DateTime.utc(2026, 1, 1);
     final database = await _database;
     final documentNumber = await DriftFiscalNumberAllocator(
       database,
-    ).reserve(cUf: '11', issuerCnpj: issuerCnpj, model: 65, series: 1);
+    ).reserve(cUf: company.cUf, issuerCnpj: company.cnpj, model: 65, series: 1);
     final document = NfeDocument(
       accessKey: AccessKey.fromComponents(
-        cUf: '11',
+        cUf: company.cUf,
         issueDate: issueDate,
-        cnpj: issuerCnpj,
+        cnpj: company.cnpj,
         model: 65,
         series: 1,
         number: documentNumber,
@@ -105,18 +154,7 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
       presenceIndicator: 1,
       processCode: '0',
       applicationVersion: '0.1.0',
-      issuer: Party(
-        name: issuerName,
-        cnpj: issuerCnpj,
-        address: 'Rua Fiscal',
-        addressNumber: '1',
-        neighborhood: 'Centro',
-        cityCode: '1100015',
-        city: 'Alta Floresta D Oeste',
-        state: 'RO',
-        zipCode: '76954000',
-        crt: '1',
-      ),
+      issuer: company.party,
       items: [
         NfeItem(
           number: 1,
@@ -256,8 +294,8 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
       setState(() => _status = 'Consultando status da SEFAZ...');
     }
     try {
-      final config = SefazEndpointCatalog.clientConfig(
-        uf: 'RO',
+      final company = _companyFromForm();
+      final config = company.sefazConfig(
         model: 65,
         environment: _environment,
         certificate: identity,
@@ -265,7 +303,7 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
       );
       final client = SefazClient.fromConfig(config);
       final response = await client.sefazStatusServico(
-        cUf: '11',
+        cUf: company.cUf,
         environment: _environment,
       );
       if (mounted) {
@@ -287,6 +325,23 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
       }
     }
   }
+
+  FiscalCompanyRegistration _companyFromForm() => FiscalCompanyRegistration(
+    name: _issuerNameController.text.trim(),
+    fantasyName: _fantasyNameController.text.trim(),
+    cnpj: _issuerCnpjController.text.trim(),
+    ie: _issuerIeController.text.trim(),
+    uf: _uf,
+    address: _addressController.text.trim(),
+    addressNumber: _addressNumberController.text.trim(),
+    neighborhood: _neighborhoodController.text.trim(),
+    cityCode: _cityCodeController.text.trim(),
+    city: _cityController.text.trim(),
+    zipCode: _zipCodeController.text.trim(),
+    phone: _phoneController.text.trim(),
+    email: _emailController.text.trim(),
+    crt: _crtController.text.trim(),
+  );
 
   void _generateEscPos() {
     final document = _document;
@@ -315,7 +370,18 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
   @override
   void dispose() {
     _issuerNameController.dispose();
+    _fantasyNameController.dispose();
     _issuerCnpjController.dispose();
+    _issuerIeController.dispose();
+    _addressController.dispose();
+    _addressNumberController.dispose();
+    _neighborhoodController.dispose();
+    _cityCodeController.dispose();
+    _cityController.dispose();
+    _zipCodeController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _crtController.dispose();
     _productController.dispose();
     _certificatePathController.dispose();
     _certificatePasswordController.dispose();
@@ -348,15 +414,91 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
                 'Configuração da demonstração',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
+              const SizedBox(height: 12),
+              const Text(
+                'Cadastro completo da empresa',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               TextField(
                 controller: _issuerNameController,
-                decoration: const InputDecoration(labelText: 'Emitente'),
+                decoration: const InputDecoration(labelText: 'Razão social'),
+              ),
+              TextField(
+                controller: _fantasyNameController,
+                decoration: const InputDecoration(labelText: 'Nome fantasia'),
               ),
               TextField(
                 controller: _issuerCnpjController,
                 decoration: const InputDecoration(
                   labelText: 'CNPJ do emitente',
                 ),
+              ),
+              TextField(
+                controller: _issuerIeController,
+                decoration: const InputDecoration(
+                  labelText: 'Inscrição estadual',
+                ),
+              ),
+              DropdownButtonFormField<String>(
+                initialValue: _uf,
+                decoration: const InputDecoration(labelText: 'UF da empresa'),
+                items: _ufCodes.keys
+                    .map(
+                      (uf) => DropdownMenuItem(
+                        value: uf,
+                        child: Text('$uf — cUF ${_ufCodes[uf]}'),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) setState(() => _uf = value);
+                },
+              ),
+              TextField(
+                controller: _addressController,
+                decoration: const InputDecoration(labelText: 'Logradouro'),
+              ),
+              TextField(
+                controller: _addressNumberController,
+                decoration: const InputDecoration(labelText: 'Número'),
+              ),
+              TextField(
+                controller: _neighborhoodController,
+                decoration: const InputDecoration(labelText: 'Bairro'),
+              ),
+              TextField(
+                controller: _cityCodeController,
+                decoration: const InputDecoration(
+                  labelText: 'Código IBGE do município',
+                ),
+              ),
+              TextField(
+                controller: _cityController,
+                decoration: const InputDecoration(labelText: 'Município'),
+              ),
+              TextField(
+                controller: _zipCodeController,
+                decoration: const InputDecoration(labelText: 'CEP'),
+              ),
+              TextField(
+                controller: _phoneController,
+                decoration: const InputDecoration(labelText: 'Telefone'),
+              ),
+              TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(labelText: 'E-mail'),
+              ),
+              TextField(
+                controller: _crtController,
+                decoration: const InputDecoration(
+                  labelText: 'CRT (regime tributário)',
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Dados da NFC-e e certificado',
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
               TextField(
                 controller: _productController,

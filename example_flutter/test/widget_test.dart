@@ -13,6 +13,8 @@ void main() {
     expect(find.text('FlutterFiscalLIB'), findsOneWidget);
     expect(find.text('Gerar e persistir NFC-e offline'), findsOneWidget);
     expect(find.text('Configuração da demonstração'), findsOneWidget);
+    expect(find.text('Cadastro completo da empresa'), findsOneWidget);
+    expect(find.text('UF da empresa'), findsOneWidget);
     expect(find.text('Carregar certificado A1'), findsOneWidget);
     expect(find.text('Escolher arquivo PFX/P12'), findsOneWidget);
     expect(find.text('Consultar status do serviço'), findsOneWidget);
