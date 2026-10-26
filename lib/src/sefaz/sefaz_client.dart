@@ -116,23 +116,42 @@ class IoSefazTransport implements SefazTransport {
   /// A validação padrão da cadeia do servidor permanece ativa. O material
   /// privado é entregue diretamente ao `SecurityContext` e não é persistido
   /// pelo transporte.
-  IoSefazTransport.fromPfx(PfxIdentity identity)
-    : _client = _clientFromPfx(identity);
+  IoSefazTransport.fromPfx(
+    PfxIdentity identity, {
+    List<List<int>> trustedCertificates = const [],
+  }) : _client = _clientFromPfx(
+         identity,
+         trustedCertificates: trustedCertificates,
+       );
 
   final HttpClient _client;
 
-  static HttpClient _clientFromPfx(PfxIdentity identity) {
+  static HttpClient _clientFromPfx(
+    PfxIdentity identity, {
+    required List<List<int>> trustedCertificates,
+  }) {
     if (!identity.certificate.isValidAt()) {
       throw const FiscalValidationException(
         'O certificado A1 está fora do período de validade.',
         code: 'EXPIRED_CERTIFICATE',
       );
     }
-    return HttpClient(context: _securityContext(identity));
+    return HttpClient(
+      context: _securityContext(
+        identity,
+        trustedCertificates: trustedCertificates,
+      ),
+    );
   }
 
-  static SecurityContext _securityContext(PfxIdentity identity) {
+  static SecurityContext _securityContext(
+    PfxIdentity identity, {
+    required List<List<int>> trustedCertificates,
+  }) {
     final context = SecurityContext(withTrustedRoots: true);
+    for (final certificate in trustedCertificates) {
+      context.setTrustedCertificatesBytes(certificate);
+    }
     context.useCertificateChainBytes(_pemChain(identity.certificateChain));
     context.usePrivateKeyBytes(_pem('PRIVATE KEY', identity.privateKeyInfoDer));
     return context;
@@ -211,9 +230,13 @@ class SefazClientConfig {
     this.timeout = const Duration(seconds: 30),
     SefazRetryPolicy? retryPolicy,
     this.certificate,
+    List<List<int>> trustedCertificates = const [],
   }) : retryPolicy = retryPolicy ?? SefazRetryPolicy(),
        serviceActions = Map.unmodifiable(serviceActions),
-       serviceEndpoints = Map.unmodifiable(serviceEndpoints) {
+       serviceEndpoints = Map.unmodifiable(serviceEndpoints),
+       trustedCertificates = List.unmodifiable(
+         trustedCertificates.map(Uint8List.fromList),
+       ) {
     if (endpoint.scheme != 'https') {
       throw const FiscalValidationException(
         'O endpoint da SEFAZ deve usar HTTPS.',
@@ -289,6 +312,10 @@ class SefazClientConfig {
 
   /// Identidade A1 opcional para autenticação TLS mútua.
   final PfxIdentity? certificate;
+
+  /// Certificados CA adicionais para servidores cuja cadeia não seja enviada
+  /// completamente pelo endpoint, mantendo a validação de hostname e cadeia.
+  final List<Uint8List> trustedCertificates;
 }
 
 /// Política de repetição segura para respostas HTTP selecionadas.
@@ -389,7 +416,10 @@ class SefazClient {
         transport ??
         (config.certificate == null
             ? null
-            : IoSefazTransport.fromPfx(config.certificate!));
+            : IoSefazTransport.fromPfx(
+                config.certificate!,
+                trustedCertificates: config.trustedCertificates,
+              ));
     return SefazClient(
       endpoint: config.endpoint,
       transport: configuredTransport,

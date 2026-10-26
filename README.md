@@ -117,6 +117,10 @@ Quando cada serviço exigir uma ação SOAP diferente, configure
 `SefazClientConfig.serviceActions`; a ação específica da operação prevalece
 sobre `soapAction` global.
 
+Se o endpoint oficial não enviar uma intermediária da sua cadeia TLS, informe
+o certificado CA oficial em `trustedCertificates`. A validação TLS continua
+ativa; não use `badCertificateCallback` para ignorar certificados inválidos.
+
 Serviços legados que exigem SOAP 1.1 podem usar
 `soapVersion: SefazSoapVersion.soap11`; o padrão é SOAP 1.2.
 

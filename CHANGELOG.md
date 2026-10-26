@@ -3,6 +3,9 @@
 ## 0.1.1 - 2026-10-26
 
 - Primeira versão incremental após a publicação inicial no pub.dev.
+- O transporte mTLS passou a aceitar CAs adicionais confiáveis para endpoints
+  estaduais que não enviam a cadeia intermediária completa, mantendo a
+  validação de hostname e certificado.
 
 - Adicionado `FiscalCompanyRegistration` e `SefazEndpointCatalog`, com catálogo
   de endpoints/action SOAP por UF, modelo e ambiente, além de geração automática

@@ -156,6 +156,7 @@ class SefazEndpointCatalog {
     PfxIdentity? certificate,
     Duration timeout = const Duration(seconds: 30),
     SefazRetryPolicy? retryPolicy,
+    List<List<int>> trustedCertificates = const [],
   }) {
     final profile = resolve(uf: uf, model: model, environment: environment);
     final names = <SefazOperation, String>{
@@ -203,6 +204,7 @@ class SefazEndpointCatalog {
       timeout: timeout,
       retryPolicy: retryPolicy,
       certificate: certificate,
+      trustedCertificates: trustedCertificates,
     );
   }
 

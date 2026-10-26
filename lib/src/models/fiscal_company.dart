@@ -140,6 +140,7 @@ class FiscalCompanyRegistration {
     PfxIdentity? certificate,
     Duration timeout = const Duration(seconds: 30),
     SefazRetryPolicy? retryPolicy,
+    List<List<int>> trustedCertificates = const [],
   }) => SefazEndpointCatalog.clientConfig(
     uf: uf,
     model: model,
@@ -147,6 +148,7 @@ class FiscalCompanyRegistration {
     certificate: certificate,
     timeout: timeout,
     retryPolicy: retryPolicy,
+    trustedCertificates: trustedCertificates,
   );
 
   /// URL de consulta pública da NFC-e para o ambiente informado.

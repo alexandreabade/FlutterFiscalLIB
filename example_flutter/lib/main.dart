@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_fiscal_lib/flutter_fiscal_lib.dart';
 import 'package:file_selector/file_selector.dart';
 
 import 'offline_database.dart';
+import 'serpro_trust.dart';
 
 void main() => runApp(const FiscalExampleApp());
 
@@ -258,6 +261,7 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
         model: 65,
         environment: _environment,
         certificate: identity,
+        trustedCertificates: [utf8.encode(serproSslV1Certificate)],
       );
       final client = SefazClient.fromConfig(config);
       final response = await client.sefazStatusServico(
