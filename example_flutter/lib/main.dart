@@ -224,17 +224,23 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
   }
 
   Future<void> _selectCertificateFile() async {
-    final file = await openFile(
-      acceptedTypeGroups: const [
-        XTypeGroup(label: 'Certificado A1', extensions: ['pfx', 'p12']),
-      ],
-    );
-    if (file == null || !mounted) return;
-    setState(() {
-      _selectedCertificateFile = file;
-      _certificatePathController.text = file.path;
-      _status = 'Arquivo selecionado: ${file.name}';
-    });
+    try {
+      final file = await openFile(
+        acceptedTypeGroups: const [
+          XTypeGroup(label: 'Certificado A1', extensions: ['pfx', 'p12']),
+        ],
+      );
+      if (file == null || !mounted) return;
+      setState(() {
+        _selectedCertificateFile = file;
+        _certificatePathController.text = file.path;
+        _status = 'Arquivo selecionado: ${file.name}';
+      });
+    } on Object catch (error) {
+      if (mounted) {
+        setState(() => _status = 'Falha ao abrir o seletor de arquivo: $error');
+      }
+    }
   }
 
   Future<void> _consultServiceStatus() async {
@@ -383,6 +389,7 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
               TextField(
                 controller: _certificatePathController,
                 readOnly: true,
+                onTap: _selectCertificateFile,
                 decoration: const InputDecoration(
                   labelText: 'Caminho do certificado A1',
                 ),
