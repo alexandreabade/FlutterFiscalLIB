@@ -1,7 +1,7 @@
 name: flutter_fiscal_lib_flutter_example
 description: Exemplo Flutter da FlutterFiscalLIB.
 publish_to: none
-version: 0.1.0+1
+version: 0.1.2+2
 
 environment:
   sdk: ^3.12.0

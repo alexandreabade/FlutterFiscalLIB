@@ -1,6 +1,6 @@
 name: flutter_fiscal_lib
 description: Biblioteca Dart/Flutter para documentos fiscais eletrônicos brasileiros.
-version: 0.1.1
+version: 0.1.2
 repository: https://github.com/alexandreabade/FlutterFiscalLIB
 issue_tracker: https://github.com/alexandreabade/FlutterFiscalLIB/issues
 environment:

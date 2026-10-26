@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2 - 2026-10-26
+
+- Corrigido o envelope SOAP v4 do status SEFAZ, incluindo namespace específico
+  do serviço e compactação do XML fiscal para endpoints com validação estrita.
+- O exemplo Flutter passou a exibir retornos SEFAZ em abas, persistir o cadastro
+  e oferecer emissão de NFC-e de homologação com geração automática do DANFE A4.
+
 ## 0.1.1 - 2026-10-26
 
 - Primeira versão incremental após a publicação inicial no pub.dev.

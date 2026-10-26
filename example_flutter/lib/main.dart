@@ -259,7 +259,7 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
       finalConsumer: 1,
       presenceIndicator: 1,
       processCode: '0',
-      applicationVersion: '0.1.0',
+      applicationVersion: '0.1.2',
       issuer: company.party,
       items: [
         NfeItem(
@@ -361,7 +361,7 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
         finalConsumer: 1,
         presenceIndicator: 1,
         processCode: '0',
-        applicationVersion: '0.1.0',
+        applicationVersion: '0.1.2',
         issuer: company.party,
         items: [
           NfeItem(
