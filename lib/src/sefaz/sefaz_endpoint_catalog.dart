@@ -177,7 +177,7 @@ class SefazEndpointCatalog {
       final service = profile.service(entry.value);
       if (service != null) {
         endpoints[entry.key] = service.url;
-        actions[entry.key] = _soapAction(service.operation);
+        actions[entry.key] = _soapAction(service.operation, service.method);
       }
     }
     final primary =
@@ -222,12 +222,15 @@ class SefazEndpointCatalog {
     return services is Map<String, dynamic> ? services : const {};
   }
 
-  static String _soapAction(String operation) {
+  static String _soapAction(String operation, String method) {
     final normalized = operation.trim();
     if (normalized.isEmpty || normalized.startsWith('http')) {
       return normalized;
     }
-    return 'http://www.portalfiscal.inf.br/nfe/wsdl/$normalized';
+    final normalizedMethod = method.trim();
+    return normalizedMethod.isEmpty
+        ? 'http://www.portalfiscal.inf.br/nfe/wsdl/$normalized'
+        : 'http://www.portalfiscal.inf.br/nfe/wsdl/$normalized/$normalizedMethod';
   }
 
   static Map<String, dynamic> _load() {
