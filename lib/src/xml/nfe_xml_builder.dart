@@ -22,7 +22,18 @@ import '../validation/gtin.dart';
 /// Gera o XML base de uma NF-e/NFC-e sem assinatura digital.
 class NfeXmlBuilder {
   /// Cria um construtor XML sem estado.
-  const NfeXmlBuilder();
+  const NfeXmlBuilder({this.calculationMethod = 2, this.checkGtin = true})
+    : assert(calculationMethod == 1 || calculationMethod == 2);
+
+  /// Estratégia de cálculo compatível com `Make::setCalculationMethod()`.
+  ///
+  /// A montagem tipada utiliza a mesma fonte decimal em ambas as estratégias;
+  /// o valor é mantido para que fachadas compatíveis possam transportar a
+  /// configuração sem perder a intenção do chamador.
+  final int calculationMethod;
+
+  /// Indica se EAN/GTIN deve ser validado durante a montagem.
+  final bool checkGtin;
 
   /// Equivalente tipado a `Make::taginfNFe()` do NFePHP.
   ///
@@ -4066,10 +4077,10 @@ class NfeXmlBuilder {
         );
       }
       if (item.ean != null) {
-        Gtin.assertValid(item.ean!);
+        if (checkGtin) Gtin.assertValid(item.ean!);
       }
       if (item.eanTrib != null) {
-        Gtin.assertValid(item.eanTrib!);
+        if (checkGtin) Gtin.assertValid(item.eanTrib!);
       }
       if (!(item.tribQuantity ?? item.quantity).isFinite ||
           !(item.tribUnitPrice ?? item.unitPrice).isFinite ||

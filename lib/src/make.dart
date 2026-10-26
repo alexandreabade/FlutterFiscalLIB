@@ -23,9 +23,37 @@ class Make {
   /// Cria uma fachada com um construtor XML configurável.
   Make({NfeXmlBuilder? builder}) : _builder = builder ?? NfeXmlBuilder();
 
-  final NfeXmlBuilder _builder;
+  NfeXmlBuilder _builder;
   bool _onlyAscii = false;
   List<String> _errors = const [];
+
+  /// Estratégia de cálculo padrão usada pelo NFePHP.
+  static const int methodCalculationV1 = 1;
+
+  /// Estratégia de cálculo baseada nas tags já construídas.
+  static const int methodCalculationV2 = 2;
+
+  /// Seleciona a estratégia de cálculo compatível com o NFePHP.
+  void setCalculationMethod([int method = methodCalculationV2]) {
+    if (method != methodCalculationV1 && method != methodCalculationV2) {
+      throw const FiscalValidationException(
+        'A estratégia de cálculo deve ser 1 ou 2.',
+        code: 'INVALID_CALCULATION_METHOD',
+      );
+    }
+    _builder = NfeXmlBuilder(
+      calculationMethod: method,
+      checkGtin: _builder.checkGtin,
+    );
+  }
+
+  /// Ativa ou desativa a validação de GTIN durante a montagem.
+  void setCheckGtin([bool option = true]) {
+    _builder = NfeXmlBuilder(
+      calculationMethod: _builder.calculationMethod,
+      checkGtin: option,
+    );
+  }
 
   /// Configura a conversão de caracteres acentuados para ASCII, equivalente
   /// a `Make::setOnlyAscii()`.
@@ -107,6 +135,9 @@ class Make {
 
   /// Monta o XML estrutural do documento fiscal.
   String montaNFe(NfeDocument document) => _build(document);
+
+  /// Alias de renderização compatível com `Make::render()`.
+  String render(NfeDocument document) => _build(document);
 
   /// Alias tipado de `Make::monta()`; o documento é explícito porque a
   /// fachada Dart não mantém o estado mutável da implementação PHP.

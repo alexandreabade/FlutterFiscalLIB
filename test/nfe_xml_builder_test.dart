@@ -45,6 +45,45 @@ void main() {
     zipCode: '76954000',
   );
 
+  test('Make preserva configurações de compatibilidade do NFePHP', () {
+    final make = Make();
+    expect(
+      () => make.setCalculationMethod(Make.methodCalculationV1),
+      returnsNormally,
+    );
+    expect(
+      () => make.setCalculationMethod(Make.methodCalculationV2),
+      returnsNormally,
+    );
+    expect(
+      () => make.setCalculationMethod(3),
+      throwsA(isA<FiscalValidationException>()),
+    );
+    expect(() => make.setCheckGtin(false), returnsNormally);
+    final document = NfeDocument(
+      accessKey: accessKey,
+      number: 1,
+      series: 1,
+      issueDate: DateTime.utc(2026, 1, 1),
+      environment: 2,
+      model: 55,
+      issuer: issuer,
+      items: [
+        NfeItem(
+          number: 1,
+          code: 'CFG',
+          description: 'Configuração',
+          ncm: '12345678',
+          cfop: '5102',
+          unit: 'UN',
+          quantity: 1,
+          unitPrice: 1,
+        ),
+      ],
+    );
+    expect(make.render(document), contains('<NFe'));
+  });
+
   test('gera XML com itens e total', () {
     final document = NfeDocument(
       accessKey: accessKey,
