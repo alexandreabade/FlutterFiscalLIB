@@ -1,5 +1,10 @@
 # Changelog
 
+- A fachada `Make` passou a cobrir `setCalculationMethod`, `setCheckGtin` e
+  `render`, com validação configurável de GTIN e testes de compatibilidade.
+- A fachada `Tools` passou a cobrir os eventos NFePHP de insucesso na entrega
+  (`110192`/`110193`) e conciliação financeira (`110750`/`110751`), com
+  builders tipados e validações próprias.
 - Corrigido o renderer HTML para que `showItemAdditionalInfo: false` também
   oculte dados de medicação, mantendo a mesma semântica do PDF.
 - O renderer HTML passou a expor `showItemAdditionalInfo` e
