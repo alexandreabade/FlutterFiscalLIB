@@ -242,6 +242,69 @@ void main() {
       );
       expect(transport.request!.body, contains('<tpEvento>110130</tpEvento>'));
 
+      await tools.sefazComprovanteEntrega(
+        accessKey: key,
+        cOrgao: 11,
+        environment: 2,
+        issuerCnpj: '04252011000110',
+        applicationVersion: '1.0.0',
+        deliveryDate: DateTime.utc(2026, 1, 2),
+        documentNumber: 'RG123456',
+        recipientName: 'Pessoa Recebedora',
+        hashComprovante: '',
+        cancel: true,
+        protocol: '123456789012345',
+      );
+      expect(transport.request!.body, contains('<tpEvento>110131</tpEvento>'));
+
+      await tools.sefazInsucessoEntrega(
+        accessKey: key,
+        cOrgao: 11,
+        environment: 2,
+        issuerCnpj: '04252011000110',
+        attemptDate: DateTime.utc(2026, 1, 2),
+        reasonType: 4,
+        attemptHash: 'hash',
+        justification: 'Destinatário ausente no endereço informado',
+      );
+      expect(transport.request!.body, contains('<tpEvento>110192</tpEvento>'));
+
+      await tools.sefazInsucessoEntrega(
+        accessKey: key,
+        cOrgao: 11,
+        environment: 2,
+        issuerCnpj: '04252011000110',
+        attemptDate: DateTime.utc(2026, 1, 2),
+        reasonType: 1,
+        attemptHash: 'hash',
+        cancel: true,
+        protocol: '123456789012345',
+      );
+      expect(transport.request!.body, contains('<tpEvento>110193</tpEvento>'));
+
+      await tools.sefazConciliacao(
+        accessKey: key,
+        cOrgao: 11,
+        environment: 2,
+        issuerCnpj: '04252011000110',
+        applicationVersion: '1.0.0',
+        payments: const [
+          FinancialReconciliationPayment(paymentType: '03', value: 10),
+        ],
+      );
+      expect(transport.request!.body, contains('<tpEvento>110750</tpEvento>'));
+
+      await tools.sefazConciliacao(
+        accessKey: key,
+        cOrgao: 11,
+        environment: 2,
+        issuerCnpj: '04252011000110',
+        applicationVersion: '1.0.0',
+        cancel: true,
+        protocol: '123456789012345',
+      );
+      expect(transport.request!.body, contains('<tpEvento>110751</tpEvento>'));
+
       await tools.sefazAtorInteressado(
         accessKey: key,
         cOrgao: 11,
