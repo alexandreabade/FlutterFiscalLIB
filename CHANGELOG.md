@@ -1,5 +1,9 @@
 # Changelog
 
+- Adicionado `FiscalCompanyRegistration` e `SefazEndpointCatalog`, com catálogo
+  de endpoints/action SOAP por UF, modelo e ambiente, além de geração automática
+  do QR Code NFC-e 2.00/3.00; incluído o exemplo
+  `example/bin/cadastro_empresa_nfce.dart`.
 - A fachada `Make` passou a cobrir `setCalculationMethod`, `setCheckGtin` e
   `render`, com validação configurável de GTIN e testes de compatibilidade.
 - A fachada `Tools` passou a cobrir os eventos NFePHP de insucesso na entrega

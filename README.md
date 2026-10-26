@@ -30,6 +30,39 @@ final document = NfeDocument.fromComponents(
 final xml = NfeXmlBuilder().build(document);
 ```
 
+## Cadastro automático da empresa e QR Code NFC-e
+
+Para configurar a UF sem copiar URLs manualmente, use
+`FiscalCompanyRegistration`. O catálogo incorporado resolve o cUF, o
+autorizador, os endpoints SOAP por operação, as ações SOAP e a URL pública do
+QR Code para os modelos 55 e 65, em produção (`1`) ou homologação (`2`):
+
+```dart
+final empresa = FiscalCompanyRegistration(
+  name: 'Empresa Exemplo LTDA',
+  cnpj: '04.252.011/0001-10',
+  ie: '123456789',
+  uf: 'RO', // sigla da UF: o roteamento é resolvido automaticamente
+);
+
+final config = empresa.sefazConfig(model: 65, environment: 2);
+final qrCode = empresa.nfceOnlineQrCode(
+  accessKey: chaveNfce,
+  environment: 2,
+  cscId: 1, // usado no QR Code 2.00
+  csc: 'CSC_DE_HOMOLOGACAO',
+);
+print(config.serviceEndpoints);
+print(qrCode.url);
+```
+
+O exemplo completo, incluindo endereço, cadastro do emitente, chave de acesso,
+certificado A1 e criação do cliente SEFAZ, está em
+`example/bin/cadastro_empresa_nfce.dart`. O catálogo é derivado do snapshot
+dos arquivos de serviços do NFePHP; endpoints estaduais podem mudar, portanto
+o snapshot deve ser revisado quando os autorizadores publicarem alterações.
+O QR Code online 3.00 não usa CSC; no 2.00 o `idCSC` e o CSC são obrigatórios.
+
 Para o caminho de assinatura e transmissão, use `buildStrict(document)` (ou
 `NfeEmissionService`), que exige os campos fiscais mínimos antes do XMLDSig.
 `build(document)` permanece disponível para montagem estrutural incremental e

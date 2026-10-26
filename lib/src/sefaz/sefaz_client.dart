@@ -192,9 +192,10 @@ class IoSefazTransport implements SefazTransport {
 
 /// Configuração explícita de um serviço SEFAZ.
 ///
-/// A biblioteca não mantém uma tabela de endpoints: cada UF pode publicar
-/// URLs e ações diferentes, por isso [endpoint] deve ser fornecido pela
-/// aplicação a partir da configuração oficial vigente.
+/// Para configuração manual, [endpoint] deve ser fornecido pela aplicação a
+/// partir da configuração oficial vigente. Para cadastro automático, use a
+/// classe `SefazEndpointCatalog`, que carrega o catálogo incorporado por UF,
+/// modelo e ambiente.
 class SefazClientConfig {
   /// Cria uma configuração validada para o serviço fiscal.
   SefazClientConfig({
