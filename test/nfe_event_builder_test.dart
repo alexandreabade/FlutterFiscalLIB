@@ -323,4 +323,63 @@ void main() {
       throwsA(isA<FiscalValidationException>()),
     );
   });
+
+  test('monta insucesso na entrega e cancelamento', () {
+    final xml = NfeEventBuilder().insucessoEntrega(
+      accessKey: key,
+      cOrgao: 11,
+      environment: 2,
+      issuerCnpj: '04252011000110',
+      attemptDate: DateTime.utc(2026, 1, 2),
+      reasonType: 4,
+      attemptHash: 'hash',
+      justification: 'Destinatário ausente no endereço informado',
+      eventDate: DateTime.utc(2026, 1, 2),
+    );
+    expect(xml, contains('<tpEvento>110192</tpEvento>'));
+    expect(xml, contains('<tpMotivo>4</tpMotivo>'));
+
+    final cancellation = NfeEventBuilder().insucessoEntrega(
+      accessKey: key,
+      cOrgao: 11,
+      environment: 2,
+      issuerCnpj: '04252011000110',
+      attemptDate: DateTime.utc(2026, 1, 2),
+      reasonType: 1,
+      attemptHash: 'hash',
+      protocol: '123456789012345',
+      cancel: true,
+    );
+    expect(cancellation, contains('<tpEvento>110193</tpEvento>'));
+    expect(
+      cancellation,
+      contains('<nProtEvento>123456789012345</nProtEvento>'),
+    );
+  });
+
+  test('monta conciliação financeira e cancelamento', () {
+    final xml = NfeEventBuilder().conciliacaoFinanceira(
+      accessKey: key,
+      cOrgao: 11,
+      environment: 2,
+      issuerCnpj: '04252011000110',
+      applicationVersion: 'app-1',
+      payments: const [
+        FinancialReconciliationPayment(paymentType: '03', value: 25.5),
+      ],
+    );
+    expect(xml, contains('<tpEvento>110750</tpEvento>'));
+    expect(xml, contains('<vPag>25.50</vPag>'));
+
+    final cancellation = NfeEventBuilder().conciliacaoFinanceira(
+      accessKey: key,
+      cOrgao: 11,
+      environment: 2,
+      issuerCnpj: '04252011000110',
+      applicationVersion: 'app-1',
+      cancel: true,
+      protocol: '123456789012345',
+    );
+    expect(cancellation, contains('<tpEvento>110751</tpEvento>'));
+  });
 }

@@ -406,6 +406,143 @@ class NfeEventBuilder {
     );
   }
 
+  /// Cria o evento de insucesso na entrega (`110192`) ou seu cancelamento
+  /// (`110193`).
+  String insucessoEntrega({
+    required String accessKey,
+    required int cOrgao,
+    required int environment,
+    required String issuerCnpj,
+    required DateTime attemptDate,
+    required int reasonType,
+    required String attemptHash,
+    int attempts = 1,
+    String? justification,
+    String? latitude,
+    String? longitude,
+    String? protocol,
+    bool cancel = false,
+    DateTime? hashDate,
+    DateTime? eventDate,
+    int sequence = 1,
+  }) {
+    _validateEvent(
+      accessKey: accessKey,
+      cOrgao: cOrgao,
+      environment: environment,
+      issuerCnpj: issuerCnpj,
+      sequence: sequence,
+    );
+    if (cancel && (protocol == null || protocol.trim().isEmpty)) {
+      throw const FiscalValidationException(
+        'O protocolo é obrigatório para cancelar o insucesso de entrega.',
+        code: 'INVALID_DELIVERY_FAILURE_PROTOCOL',
+      );
+    }
+    if (!cancel && (reasonType < 1 || reasonType > 4 || attempts < 1)) {
+      throw const FiscalValidationException(
+        'O motivo e o número de tentativas de entrega são inválidos.',
+        code: 'INVALID_DELIVERY_FAILURE_DATA',
+      );
+    }
+    if (!cancel &&
+        reasonType == 4 &&
+        (justification == null || justification.trim().isEmpty)) {
+      throw const FiscalValidationException(
+        'A justificativa é obrigatória para o motivo 4.',
+        code: 'INVALID_DELIVERY_FAILURE_JUSTIFICATION',
+      );
+    }
+    if (!cancel) _validateGps(latitude, longitude);
+    final eventType = cancel ? '110193' : '110192';
+    return _event(
+      accessKey: accessKey,
+      cOrgao: cOrgao,
+      environment: environment,
+      issuerCnpj: issuerCnpj,
+      eventType: eventType,
+      sequence: sequence,
+      date: eventDate,
+      description: cancel
+          ? 'Cancelamento do Insucesso na Entrega'
+          : 'Insucesso na Entrega',
+      details: [
+        if (!cancel) ...[
+          _text('dhTentativaEntrega', _dateTime(attemptDate)),
+          _text('nTentativa', '$attempts'),
+          _text('tpMotivo', '$reasonType'),
+          if (reasonType == 4) _text('xJustMotivo', justification!.trim()),
+          if (latitude != null) _text('latGPS', latitude),
+          if (longitude != null) _text('longGPS', longitude),
+          _text('hashTentativaEntrega', attemptHash),
+          if (hashDate != null)
+            _text('dhHashTentativaEntrega', _dateTime(hashDate)),
+        ],
+        if (cancel) _text('nProtEvento', protocol!.trim()),
+      ],
+    );
+  }
+
+  /// Cria o evento de conciliação financeira (`110750`) ou seu cancelamento
+  /// (`110751`).
+  String conciliacaoFinanceira({
+    required String accessKey,
+    required int cOrgao,
+    required int environment,
+    required String issuerCnpj,
+    required String applicationVersion,
+    List<FinancialReconciliationPayment> payments = const [],
+    bool cancel = false,
+    String? protocol,
+    DateTime? eventDate,
+    int sequence = 1,
+  }) {
+    _validateEvent(
+      accessKey: accessKey,
+      cOrgao: cOrgao,
+      environment: environment,
+      issuerCnpj: issuerCnpj,
+      sequence: sequence,
+    );
+    if (applicationVersion.trim().isEmpty || applicationVersion.length > 20) {
+      throw const FiscalValidationException(
+        'A versão do aplicativo é inválida.',
+        code: 'INVALID_RECONCILIATION_VERSION',
+      );
+    }
+    if (cancel && (protocol == null || protocol.trim().isEmpty)) {
+      throw const FiscalValidationException(
+        'O protocolo é obrigatório para cancelar a conciliação.',
+        code: 'INVALID_RECONCILIATION_PROTOCOL',
+      );
+    }
+    if (!cancel && payments.isEmpty) {
+      throw const FiscalValidationException(
+        'Informe ao menos um pagamento para a conciliação.',
+        code: 'EMPTY_RECONCILIATION_PAYMENTS',
+      );
+    }
+    return _event(
+      accessKey: accessKey,
+      cOrgao: cOrgao,
+      environment: environment,
+      issuerCnpj: issuerCnpj,
+      eventType: cancel ? '110751' : '110750',
+      sequence: sequence,
+      date: eventDate,
+      description: cancel
+          ? 'Cancelamento da Conciliação Financeira'
+          : 'Conciliação Financeira',
+      details: [
+        _text('verAplic', applicationVersion.trim()),
+        if (cancel)
+          _text('nProtEvento', protocol!.trim())
+        else
+          for (final payment in payments) payment.toXml(),
+      ],
+    );
+  }
+
   /// Cria um evento EPEC (`tpEvento=110140`) para emissão em contingência.
   ///
   /// A chave precisa codificar `tpEmis=4`, conforme o leiaute oficial. O XML
@@ -760,6 +897,44 @@ class NfeEventBuilder {
 
   XmlElement _text(String name, String value) =>
       XmlElement(XmlName.parts(name), const [], [XmlText(value)]);
+}
+
+/// Pagamento informado no evento de conciliação financeira.
+class FinancialReconciliationPayment {
+  /// Cria um detalhe `detPag` do evento de conciliação.
+  const FinancialReconciliationPayment({
+    required this.paymentType,
+    required this.value,
+    this.paymentDate,
+    this.description,
+  });
+
+  /// Código do meio de pagamento (`tPag`).
+  final String paymentType;
+
+  /// Valor conciliado (`vPag`).
+  final num value;
+
+  /// Data do pagamento (`dPag`), quando aplicável.
+  final DateTime? paymentDate;
+
+  /// Descrição de meio de pagamento (`xPag`).
+  final String? description;
+
+  /// Converte o detalhe para o elemento XML `detPag`.
+  XmlElement toXml() => XmlElement(XmlName.parts('detPag'), const [], [
+    XmlElement(XmlName.parts('indPag'), const [], [XmlText('0')]),
+    XmlElement(XmlName.parts('tPag'), const [], [XmlText(paymentType)]),
+    if (description != null)
+      XmlElement(XmlName.parts('xPag'), const [], [XmlText(description!)]),
+    XmlElement(XmlName.parts('vPag'), const [], [
+      XmlText(value.toStringAsFixed(2)),
+    ]),
+    if (paymentDate != null)
+      XmlElement(XmlName.parts('dPag'), const [], [
+        XmlText(paymentDate!.toIso8601String().substring(0, 10)),
+      ]),
+  ]);
 }
 
 /// Constrói o pedido de inutilização de numeração sem assinatura.

@@ -628,6 +628,76 @@ class Tools {
     return _sendEvent(event);
   }
 
+  /// Envia o evento de insucesso na entrega (`110192`) ou o cancelamento
+  /// correspondente (`110193`).
+  Future<SefazResponse> sefazInsucessoEntrega({
+    required String accessKey,
+    required int cOrgao,
+    required int environment,
+    required String issuerCnpj,
+    required DateTime attemptDate,
+    required int reasonType,
+    required String attemptHash,
+    int attempts = 1,
+    String? justification,
+    String? latitude,
+    String? longitude,
+    String? protocol,
+    bool cancel = false,
+    DateTime? hashDate,
+    DateTime? eventDate,
+    int sequence = 1,
+  }) async {
+    final event = NfeEventBuilder().insucessoEntrega(
+      accessKey: accessKey,
+      cOrgao: cOrgao,
+      environment: environment,
+      issuerCnpj: issuerCnpj,
+      attemptDate: attemptDate,
+      reasonType: reasonType,
+      attemptHash: attemptHash,
+      attempts: attempts,
+      justification: justification,
+      latitude: latitude,
+      longitude: longitude,
+      protocol: protocol,
+      cancel: cancel,
+      hashDate: hashDate,
+      eventDate: eventDate,
+      sequence: sequence,
+    );
+    return _sendEvent(event);
+  }
+
+  /// Envia o evento de conciliação financeira (`110750`) ou cancelamento
+  /// (`110751`).
+  Future<SefazResponse> sefazConciliacao({
+    required String accessKey,
+    required int cOrgao,
+    required int environment,
+    required String issuerCnpj,
+    required String applicationVersion,
+    List<FinancialReconciliationPayment> payments = const [],
+    bool cancel = false,
+    String? protocol,
+    DateTime? eventDate,
+    int sequence = 1,
+  }) async {
+    final event = NfeEventBuilder().conciliacaoFinanceira(
+      accessKey: accessKey,
+      cOrgao: cOrgao,
+      environment: environment,
+      issuerCnpj: issuerCnpj,
+      applicationVersion: applicationVersion,
+      payments: payments,
+      cancel: cancel,
+      protocol: protocol,
+      eventDate: eventDate,
+      sequence: sequence,
+    );
+    return _sendEvent(event);
+  }
+
   /// Envia o evento de ator interessado na NF-e (`tpEvento=110150`).
   Future<SefazResponse> sefazAtorInteressado({
     required String accessKey,
