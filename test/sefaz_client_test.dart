@@ -144,7 +144,7 @@ void main() {
     expect(transport.request!.body, contains('versao="4.10"'));
   });
 
-  test('envia o cabeçalho oficial na consulta de status', () async {
+  test('monta o corpo oficial v4 na consulta de status', () async {
     final transport = _FakeTransport();
     final client = SefazClient(
       endpoint: Uri.parse('https://sefaz.example.test/nfe'),
@@ -153,18 +153,14 @@ void main() {
 
     await client.sefazStatusServico(cUf: '11', environment: 2);
 
-    expect(transport.request!.body, contains('<soap12:Header>'));
     expect(
       transport.request!.body,
       contains(
-        'nfeCabecMsg xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeStatusServico4"',
+        '<nfeDadosMsg xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeStatusServico4">',
       ),
     );
     expect(transport.request!.body, contains('<cUF>11</cUF>'));
-    expect(
-      transport.request!.body,
-      contains('<versaoDados>4.00</versaoDados>'),
-    );
+    expect(transport.request!.body, isNot(contains('<soap12:Header>')));
   });
 
   test(

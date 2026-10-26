@@ -478,7 +478,7 @@ class SefazClient {
     SefazOperation operation = SefazOperation.generic,
     bool compress = false,
     bool wrapInNfeDadosMsg = false,
-    String? soapHeader,
+    String nfeDadosMsgNamespace = 'http://www.portalfiscal.inf.br/nfe',
   }) async {
     if (xml.trim().isEmpty) {
       throw const FiscalValidationException(
@@ -499,20 +499,18 @@ class SefazClient {
         ? '<nfeDadosMsgZip xmlns="http://www.portalfiscal.inf.br/nfe">'
               '${base64Encode(gzip.encode(utf8.encode(xml)))}</nfeDadosMsgZip>'
         : wrapInNfeDadosMsg
-        ? '<nfeDadosMsg xmlns="http://www.portalfiscal.inf.br/nfe">'
+        ? '<nfeDadosMsg xmlns="$nfeDadosMsgNamespace">'
               '$xml</nfeDadosMsg>'
         : xml;
     final envelope = soapVersion == SefazSoapVersion.soap12
         ? '''<?xml version="1.0" encoding="UTF-8"?>
 <soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
-  ${soapHeader == null ? '' : '<soap12:Header>$soapHeader</soap12:Header>'}
   <soap12:Body>
     $bodyXml
   </soap12:Body>
 </soap12:Envelope>'''
         : '''<?xml version="1.0" encoding="UTF-8"?>
 <soap11:Envelope xmlns:soap11="http://schemas.xmlsoap.org/soap/envelope/">
-  ${soapHeader == null ? '' : '<soap11:Header>$soapHeader</soap11:Header>'}
   <soap11:Body>
     $bodyXml
   </soap11:Body>
@@ -633,10 +631,8 @@ class SefazClient {
   </consStatServ>''',
       operation: SefazOperation.status,
       wrapInNfeDadosMsg: true,
-      soapHeader:
-          '<nfeCabecMsg xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeStatusServico4">'
-          '<cUF>$cUf</cUF><versaoDados>$serviceVersion</versaoDados>'
-          '</nfeCabecMsg>',
+      nfeDadosMsgNamespace:
+          'http://www.portalfiscal.inf.br/nfe/wsdl/NFeStatusServico4',
     );
   }
 
