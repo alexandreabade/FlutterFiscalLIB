@@ -1,6 +1,24 @@
 # FlutterFiscalLIB
 
-Biblioteca Dart/Flutter para construção de documentos fiscais eletrônicos brasileiros.
+Biblioteca Dart/Flutter para emissão, validação, transmissão e impressão de
+documentos fiscais eletrônicos brasileiros.
+
+> Criada e mantida por **Alexandre Abade**.
+
+[![pub.dev](https://img.shields.io/pub/v/flutter_fiscal_lib.svg)](https://pub.dev/packages/flutter_fiscal_lib)
+[![Dart](https://img.shields.io/badge/Dart-3.12%2B-0175C2.svg)](https://dart.dev/)
+[![Flutter](https://img.shields.io/badge/Flutter-supported-02569B.svg)](https://flutter.dev/)
+
+## Instalação
+
+```bash
+flutter pub add flutter_fiscal_lib
+```
+
+O pacote atual é `0.1.2`. Para testar a integração completa, use o aplicativo
+em `example_flutter/` ou o exemplo Dart em `example/bin/`.
+
+## O que a biblioteca oferece
 
 O projeto é desenvolvido incrementalmente, com API pública para modelos de
 emitente, destinatário e itens, cálculo de chave, validação estrutural do XML,
@@ -9,6 +27,10 @@ transporte SOAP/TLS com parser SEFAZ, eventos de cancelamento, CC-e,
 manifestação, EPEC e inutilização, contingência offline NFC-e, QR Code 2.00/3.00,
 fila persistível, reserva de numeração e renderizadores DANFE textual, HTML e
 PDF auxiliares.
+
+O núcleo não armazena certificados, senhas, CSC ou tokens. A aplicação deve
+fornecer as credenciais por meio de um armazenamento seguro e configurar o
+ambiente de homologação ou produção conscientemente.
 
 ## Uso
 
@@ -238,4 +260,28 @@ coluna e a migração correspondente.
 ## Escopo e rastreabilidade
 
 O port do NFePHP será desenvolvido por módulos, preservando nomes públicos quando a semântica puder ser mantida. Cada módulo deverá receber testes, documentação de diferenças e evidência de validação antes de ser considerado concluído.
+
+## Como contribuir
+
+Contribuições são bem-vindas. Crie uma branch a partir de `main`, implemente a
+alteração, adicione ou atualize os testes e abra um Pull Request. Toda mudança
+fiscal deve incluir documentação da diferença em relação ao leiaute oficial ou
+ao NFePHP quando aplicável.
+
+Antes de enviar uma contribuição, execute:
+
+```bash
+dart format .
+dart analyze
+dart test
+```
+
+Nunca envie certificados A1, senhas, CSC, tokens ou arquivos `.env`. Consulte
+o [SECURITY.md](SECURITY.md) para reportar vulnerabilidades.
+
+## Autor e licença
+
+Projeto criado por **Alexandre Abade**.
+
+Distribuído sob a licença MIT. Consulte o arquivo [LICENSE](LICENSE).
 
