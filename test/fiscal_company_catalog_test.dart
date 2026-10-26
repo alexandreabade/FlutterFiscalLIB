@@ -62,6 +62,10 @@ void main() {
     expect(config.endpoint.scheme, 'https');
     expect(config.serviceEndpoints[SefazOperation.authorization], isNotNull);
     expect(config.serviceActions[SefazOperation.authorization], isNotEmpty);
+    expect(
+      config.serviceActions[SefazOperation.status],
+      'http://www.portalfiscal.inf.br/nfe/wsdl/NFeStatusServico4',
+    );
     expect(config.serviceEndpoints[SefazOperation.event], isNotNull);
   });
 
