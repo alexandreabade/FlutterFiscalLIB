@@ -280,7 +280,10 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
       }
     } on Object catch (error) {
       if (mounted) {
-        setState(() => _status = 'Falha na consulta de status: $error');
+        final detail = error is FiscalException && error.cause != null
+            ? '\nDetalhe técnico: ${error.cause}'
+            : '';
+        setState(() => _status = 'Falha na consulta de status: $error$detail');
       }
     }
   }
