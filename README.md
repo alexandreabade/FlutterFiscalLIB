@@ -18,6 +18,36 @@ flutter pub add flutter_fiscal_lib
 O pacote atual é `0.1.2`. Para testar a integração completa, use o aplicativo
 em `example_flutter/` ou o exemplo Dart em `example/bin/`.
 
+## Status do projeto
+
+O projeto está em desenvolvimento incremental e recebe contribuições por Pull
+Request. A versão publicada no pub.dev é adequada para avaliação e integração
+controlada; a autorização fiscal em produção depende do certificado, CSC,
+credenciamento e regras da UF do usuário.
+
+## Recursos por área
+
+| Área | Recursos |
+| --- | --- |
+| Documentos | NF-e modelo 55, NFC-e modelo 65, chave de acesso e XML tipado |
+| SEFAZ | Catálogo por UF, homologação/produção, SOAP 1.1/1.2, TLS/mTLS e parser de retornos |
+| Segurança | Certificado A1, XMLDSig, verificação criptográfica e armazenamento seguro por adaptador |
+| NFC-e | QR Code 2.00/3.00, CSC, contingência offline e fila persistível |
+| Eventos | Cancelamento, CC-e, manifestação, EPEC, inutilização e eventos complementares |
+| DANFE | HTML, PDF A4, PDF térmico 80 mm, texto e ESC/POS |
+| Plataformas | Dart, Flutter, Android, iOS, macOS, Linux e Windows |
+
+## Homologação e produção
+
+Comece sempre pelo ambiente de homologação (`environment: 2`). A produção
+(`environment: 1`) exige credenciamento fiscal, certificado válido, CSC quando
+aplicável e autorização do responsável tributário. Consulte
+[`HOMOLOGATION.md`](HOMOLOGATION.md) antes de realizar qualquer chamada real.
+
+A biblioteca não promete autorização fiscal apenas por gerar um XML. O retorno
+da SEFAZ deve ser interpretado, persistido e tratado; em caso de timeout ou
+falha de rede, consulte o documento antes de reenviar.
+
 ## O que a biblioteca oferece
 
 O projeto é desenvolvido incrementalmente, com API pública para modelos de
@@ -257,9 +287,19 @@ SHA-256 do XML assinado. Stores concretos devem preservá-lo e chamar
 qualquer XML alterado desde a persistência. O exemplo Flutter/Drift inclui a
 coluna e a migração correspondente.
 
+## Roadmap
+
+- Expandir a cobertura de homologação opt-in por UF e serviço.
+- Ampliar exemplos completos de eventos fiscais e transmissão assíncrona.
+- Melhorar a paridade visual do DANFE com os leiautes oficiais.
+- Documentar integrações de impressão Bluetooth, TCP e impressão do sistema.
+- Manter a compatibilidade pública e a matriz de diferenças em relação ao NFePHP.
+
 ## Escopo e rastreabilidade
 
-O port do NFePHP será desenvolvido por módulos, preservando nomes públicos quando a semântica puder ser mantida. Cada módulo deverá receber testes, documentação de diferenças e evidência de validação antes de ser considerado concluído.
+O port do NFePHP é desenvolvido por módulos, preservando nomes públicos quando
+a semântica puder ser mantida. Cada módulo recebe testes, documentação de
+diferenças e evidência de validação antes de ser considerado concluído.
 
 ## Como contribuir
 
@@ -279,13 +319,20 @@ dart test
 Nunca envie certificados A1, senhas, CSC, tokens ou arquivos `.env`. Consulte
 o [SECURITY.md](SECURITY.md) para reportar vulnerabilidades.
 
+## Agradecimentos
+
+Este projeto é inspirado no ecossistema do [NFePHP](https://github.com/nfephp-org)
+e utiliza como referência os leiautes fiscais, manuais técnicos e serviços
+oficiais das Secretarias da Fazenda. Consulte [`REFERENCES.md`](REFERENCES.md)
+para a rastreabilidade das fontes.
+
 ## Autor e licença
 
 Projeto criado por **Alexandre Abade**.
 
 ## Contato
 
-- LinkedIn: [Alexandre Abade](https://www.linkedin.com/in/alexandre-abade-92aa9b96/details/experience/)
+- LinkedIn: [Alexandre Abade](https://www.linkedin.com/in/alexandre-abade-92aa9b96/)
 - WhatsApp: [55 69 99387-7484](https://wa.me/5569993877484)
 
 Distribuído sob a licença MIT. Consulte o arquivo [LICENSE](LICENSE).
