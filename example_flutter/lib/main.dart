@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_fiscal_lib/flutter_fiscal_lib.dart';
 import 'package:file_selector/file_selector.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'offline_database.dart';
 import 'serpro_trust.dart';
@@ -210,34 +212,43 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
     }
   }
 
-  Future<void> _prepareDanfePdf() async {
+  Future<void> _prepareDanfePdf({required DanfePdfLayout layout}) async {
     final document = _document;
     if (document == null) {
-      _showMessage('Gere uma NFC-e antes de preparar o PDF.');
+      _showMessage('Gere uma NFC-e antes de gerar o DANFE.');
       return;
     }
-    final pdf = await DanfePdfRenderer().render(
-      document,
-      layout: DanfePdfLayout.nfceThermal80,
-    );
-    var deliveredBytes = 0;
-    final adapter = PdfFiscalOutputAdapter((bytes, _) {
-      deliveredBytes = bytes.length;
-    });
-    await adapter.send(
-      FiscalOutputJob(
-        bytes: pdf,
-        format: FiscalOutputFormat.pdf,
-        fileName: 'nfce-${document.accessKey}.pdf',
-      ),
+    final pdf = await DanfePdfRenderer().render(document, layout: layout);
+    final fileName = layout == DanfePdfLayout.a4
+        ? 'danfe-a4-${document.accessKey}.pdf'
+        : 'danfe-cupom-80mm-${document.accessKey}.pdf';
+    final outputPath = await _saveOutput(
+      pdf,
+      format: FiscalOutputFormat.pdf,
+      fileName: fileName,
     );
     if (mounted) {
       setState(() {
-        _status =
-            'PDF DANFE preparado e entregue ao adaptador Flutter: $deliveredBytes bytes.';
-        _history.insert(0, 'DANFE PDF preparado ($deliveredBytes bytes)');
+        _status = layout == DanfePdfLayout.a4
+            ? 'DANFE A4 gerado para impressão: $outputPath'
+            : 'DANFE cupom 80 mm gerado para impressão: $outputPath';
+        _history.insert(0, 'PDF gerado: $fileName (${pdf.length} bytes)');
       });
     }
+  }
+
+  Future<String> _saveOutput(
+    Uint8List bytes, {
+    required FiscalOutputFormat format,
+    required String fileName,
+  }) async {
+    final documentsDirectory = await getApplicationDocumentsDirectory();
+    final outputDirectory =
+        '${documentsDirectory.path}/FlutterFiscalLIB/saidas';
+    await FileFiscalOutputAdapter(
+      outputDirectory,
+    ).send(FiscalOutputJob(bytes: bytes, format: format, fileName: fileName));
+    return '$outputDirectory/$fileName';
   }
 
   Future<void> _loadCertificate() async {
@@ -385,7 +396,7 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
     crt: _crtController.text.trim(),
   );
 
-  void _generateEscPos() {
+  Future<void> _generateEscPos() async {
     final document = _document;
     if (document == null) {
       _showMessage('Gere uma NFC-e antes de gerar o cupom ESC/POS.');
@@ -393,11 +404,16 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
     }
     final text = DanfeTextRenderer().render(document);
     final bytes = EscPosEncoder().encode(text);
+    final outputPath = await _saveOutput(
+      bytes,
+      format: FiscalOutputFormat.escPos,
+      fileName: 'cupom-escpos-${document.accessKey}.bin',
+    );
     if (mounted) {
       setState(() {
         _status =
-            'Cupom ESC/POS preparado: ${bytes.length} bytes. Envie por TCP, USB ou Bluetooth usando um adaptador do aplicativo.';
-        _history.insert(0, 'Cupom ESC/POS preparado (${bytes.length} bytes)');
+            'Cupom ESC/POS gerado: $outputPath. Envie os bytes para a impressora via TCP, USB ou Bluetooth.';
+        _history.insert(0, 'Cupom ESC/POS gerado (${bytes.length} bytes)');
       });
     }
   }
@@ -646,11 +662,16 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
             ),
             OutlinedButton(
               onPressed: _generateEscPos,
-              child: const Text('Preparar cupom ESC/POS'),
+              child: const Text('Gerar cupom ESC/POS'),
             ),
             OutlinedButton(
-              onPressed: _prepareDanfePdf,
-              child: const Text('Preparar PDF DANFE'),
+              onPressed: () =>
+                  _prepareDanfePdf(layout: DanfePdfLayout.nfceThermal80),
+              child: const Text('Gerar DANFE cupom PDF (80 mm)'),
+            ),
+            OutlinedButton(
+              onPressed: () => _prepareDanfePdf(layout: DanfePdfLayout.a4),
+              child: const Text('Gerar DANFE A4 PDF'),
             ),
             OutlinedButton(
               onPressed: () => _showMessage(
