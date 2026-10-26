@@ -1,0 +1,237 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  portable-dart:
+    name: Dart (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - run: dart format --output=none --set-exit-if-changed lib test tool
+      - run: dart analyze
+      - run: dart test
+      - run: dart run tool/verify_release_readiness.dart
+
+  nfephp-api-regression:
+    name: NFePHP API regression
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: nfephp-org/sped-nfe
+          ref: cf0baf005691c3a9e252314150c7dac18adbb2ee
+          path: .ci/nfephp
+          fetch-depth: 1
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: dom, openssl, soap, zlib
+      - run: |
+          cd .ci/nfephp
+          composer config audit.block-insecure false
+          composer config --unset require-dev
+          composer update --no-interaction --no-progress --prefer-dist
+      - run: dart pub get
+      - run: >-
+          dart run tool/verify_nfephp_api.dart
+          --php-make .ci/nfephp/src/Make.php
+          --dart-make lib/src/make.dart
+      - run: >-
+          dart run tool/verify_nfephp_tools_api.dart
+          --php-tools .ci/nfephp/src/Tools.php
+          --dart-tools lib/src/tools.dart
+      - run: >-
+          dart run tool/verify_nfephp_signatures.dart
+          --php-make .ci/nfephp/src/Make.php
+          --dart-make lib/src/make.dart
+          --php-tools .ci/nfephp/src/Tools.php
+          --dart-tools lib/src/tools.dart
+          --report /tmp/flutter-fiscal-api-signatures.md
+      - run: >-
+          dart run tool/verify_nfephp_surfaces.dart
+          --php-complements .ci/nfephp/src/Complements.php
+          --dart-complements lib/src/complements.dart
+          --php-standardize .ci/nfephp/src/Common/Standardize.php
+          --dart-standardize lib/src/standardize.dart
+          --php-certificate .ci/nfephp/vendor/nfephp-org/sped-common/src/Certificate.php
+          --dart-certificate lib/src/crypto/certificate.dart
+      - run: dart run tool/verify_nfephp_make.dart --nfephp .ci/nfephp
+      - run: >-
+          dart run tool/verify_nfephp_txt_layout.dart
+          --php-layout .ci/nfephp/docs/txtlayout400.md
+          --dart-validator lib/src/validation/nfe_txt_validator.dart
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+      - run: test "$(find schemas/PL_009_V4 -type f | wc -l | tr -d ' ')" = "194"
+      - run: xmllint --noout schemas/PL_009_V4/nfe_v4.00.xsd
+      - run: test "$(find schemas/PL_010b_NT2025_002_v1.30 -type f | wc -l | tr -d ' ')" = "5"
+      - run: xmllint --noout schemas/PL_010b_NT2025_002_v1.30/nfe_v4.00.xsd
+      - run: test "$(find schemas/PL_010f_v1.04 -type f | wc -l | tr -d ' ')" = "5"
+      - run: xmllint --noout schemas/PL_010f_v1.04/nfe_v4.00.xsd
+      - run: dart run tool/verify_schema_manifest.dart --manifest schemas/PL_009_V4.MANIFEST.json --directory schemas/PL_009_V4
+      - run: dart run tool/verify_schema_manifest.dart --manifest schemas/PL_010b_NT2025_002_v1.30.MANIFEST.json --directory schemas/PL_010b_NT2025_002_v1.30
+      - run: dart run tool/verify_schema_manifest.dart --manifest schemas/PL_010f_v1.04.MANIFEST.json --directory schemas/PL_010f_v1.04
+      - run: dart format --output=none --set-exit-if-changed lib test tool
+      - run: dart analyze
+      - run: dart test
+
+      - run: dart pub get
+        working-directory: example
+      - run: dart analyze
+        working-directory: example
+      - run: dart run bin/flutter_fiscal_lib_example.dart
+        working-directory: example
+      - run: dart run tool/validate_signed_example.dart --out /tmp/flutter-fiscal-signed.xml
+      - run: xmllint --noout --schema schemas/PL_010f_v1.04/nfe_v4.00.xsd /tmp/flutter-fiscal-signed.xml
+      - run: dart run tool/verify_openssl_signature.dart
+      - run: dart run tool/validate_icms_variants.dart --out /tmp/flutter-fiscal-icms.xml
+      - run: xmllint --noout --schema schemas/PL_010f_v1.04/nfe_v4.00.xsd /tmp/flutter-fiscal-icms.xml
+      - run: dart run tool/validate_offline_example.dart --out /tmp/flutter-fiscal-offline.xml
+      - run: xmllint --noout --schema schemas/PL_010f_v1.04/nfe_v4.00.xsd /tmp/flutter-fiscal-offline.xml
+      - run: dart run tool/validate_epec_example.dart --out /tmp/flutter-fiscal-epec.xml
+      - run: xmllint --noout --schema schemas/PL_009_V4/eventoEPEC_v1.00.xsd /tmp/flutter-fiscal-epec.xml
+      - run: dart run tool/validate_inutilization_example.dart --out /tmp/flutter-fiscal-inutilization.xml
+      - run: xmllint --noout --schema schemas/PL_009_V4/inutNFe_v4.00.xsd /tmp/flutter-fiscal-inutilization.xml
+      - run: dart run tool/validate_delivery_example.dart --out /tmp/flutter-fiscal-delivery.xml
+      - run: xmllint --noout --schema schemas/PL_009_V4/envEventoEntregaNFe_v1.00.xsd /tmp/flutter-fiscal-delivery.xml
+      - run: dart run tool/validate_interested_actor_example.dart --out /tmp/flutter-fiscal-interested-actor.xml
+      - run: xmllint --noout --schema schemas/PL_009_V4/envEventoAtorInteressado_v1.00.xsd /tmp/flutter-fiscal-interested-actor.xml
+      - run: dart run tool/validate_extension_example.dart --out /tmp/flutter-fiscal-extension.xml
+      - run: xmllint --noout --schema schemas/PL_009_V4/envEvento_v1.00.xsd /tmp/flutter-fiscal-extension.xml
+      - run: dart run tool/validate_extension_example.dart --cancel --out /tmp/flutter-fiscal-extension-cancel.xml
+      - run: xmllint --noout --schema schemas/PL_009_V4/envEvento_v1.00.xsd /tmp/flutter-fiscal-extension-cancel.xml
+      - run: dart run tool/validate_trade_example.dart --out /tmp/flutter-fiscal-trade.xml
+      - run: xmllint --noout --schema schemas/PL_010f_v1.04/nfe_v4.00.xsd /tmp/flutter-fiscal-trade.xml
+      - run: dart run tool/validate_product_specials.dart --out /tmp/flutter-fiscal-product-specials.xml
+      - run: xmllint --noout --schema schemas/PL_010f_v1.04/nfe_v4.00.xsd /tmp/flutter-fiscal-product-specials.xml
+      - run: dart run tool/validate_avulsa_example.dart --out /tmp/flutter-fiscal-avulsa.xml
+      - run: xmllint --noout --schema schemas/PL_010f_v1.04/nfe_v4.00.xsd /tmp/flutter-fiscal-avulsa.xml
+      - run: dart run tool/validate_reform_example.dart --out /tmp/flutter-fiscal-reform.xml
+      - run: dart run tool/validate_monophase_example.dart --out /tmp/flutter-fiscal-monophase.xml
+      - run: dart run tool/validate_tax_extensions.dart --out /tmp/flutter-fiscal-tax-extensions.xml
+      - run: xmllint --noout --schema schemas/PL_010f_v1.04/nfe_v4.00.xsd /tmp/flutter-fiscal-reform.xml
+      - run: xmllint --noout --schema schemas/PL_010f_v1.04/nfe_v4.00.xsd /tmp/flutter-fiscal-monophase.xml
+      - run: xmllint --noout --schema schemas/PL_010f_v1.04/nfe_v4.00.xsd /tmp/flutter-fiscal-tax-extensions.xml
+      - run: dart run tool/render_danfe_example.dart /tmp/flutter-fiscal-danfe.pdf
+      - run: test -s /tmp/flutter-fiscal-danfe.pdf
+      - run: dart doc --validate-links
+      - run: dart pub publish --dry-run
+
+  flutter-example:
+    name: Flutter example (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    defaults:
+      run:
+        working-directory: example_flutter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: dart run build_runner build
+      - run: flutter analyze
+      - run: flutter build bundle --debug
+      - run: flutter test
+      - run: flutter build apk --debug
+        if: matrix.os == 'ubuntu-latest'
+      - run: flutter build ios --debug --no-codesign
+        if: matrix.os == 'macos-latest'
+      - run: flutter build linux --debug
+        if: matrix.os == 'ubuntu-latest'
+      - run: sudo apt-get update && sudo apt-get install -y xvfb
+        if: matrix.os == 'ubuntu-latest'
+      - run: xvfb-run -a flutter test integration_test/xsd_platform_test.dart -d linux
+        if: matrix.os == 'ubuntu-latest'
+      - run: flutter build macos --debug
+        if: matrix.os == 'macos-latest'
+      - run: flutter test integration_test/xsd_platform_test.dart -d macos
+        if: matrix.os == 'macos-latest'
+      - run: flutter build windows --debug
+        if: matrix.os == 'windows-latest'
+      - run: flutter test integration_test/xsd_platform_test.dart -d windows
+        if: matrix.os == 'windows-latest'
+
+  flutter-android-integration:
+    name: Flutter Android integration
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: example_flutter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: dart run build_runner build
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          script: |
+            cd example_flutter
+            flutter test integration_test/offline_flow_test.dart -d emulator-5554
+            flutter test integration_test/xsd_platform_test.dart -d emulator-5554
+
+  flutter-ios-integration:
+    name: Flutter iOS simulator integration
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: example_flutter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: dart run build_runner build
+      - name: Boot iOS simulator
+        id: simulator
+        working-directory: .
+        shell: bash
+        run: |
+          device_id="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ {print $2; exit}')"
+          test -n "$device_id"
+          xcrun simctl boot "$device_id" || true
+          xcrun simctl bootstatus "$device_id" -b
+          echo "device_id=$device_id" >> "$GITHUB_OUTPUT"
+      - run: flutter test integration_test/offline_flow_test.dart -d ${{ steps.simulator.outputs.device_id }}
+      - run: flutter test integration_test/xsd_platform_test.dart -d ${{ steps.simulator.outputs.device_id }}
+      - name: Shutdown iOS simulator
+        if: always()
+        working-directory: .
+        run: xcrun simctl shutdown "${{ steps.simulator.outputs.device_id }}" || true
+

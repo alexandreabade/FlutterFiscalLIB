@@ -1,0 +1,12 @@
+name: flutter_fiscal_lib_example
+description: Exemplo mínimo de uso da FlutterFiscalLIB.
+publish_to: none
+environment:
+  sdk: ^3.4.0
+dependencies:
+  flutter_fiscal_lib:
+    path: ../
+
+dev_dependencies:
+  lints: ^4.0.0
+

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<NFe xmlns="http://www.portalfiscal.inf.br/nfe">
+  <infNFe Id="NFe11012604252011000110550010000000011123456784" versao="4.00">
+    <ide>
+      <cUF>11</cUF>
+      <nNF>1</nNF>
+      <serie>1</serie>
+      <mod>55</mod>
+      <tpAmb>2</tpAmb>
+      <tpEmis>1</tpEmis>
+      <dhEmi>2026-01-01T12:00:00Z</dhEmi>
+    </ide>
+    <emit>
+      <CNPJ>04252011000110</CNPJ>
+      <xNome>Empresa de Teste</xNome>
+      <enderEmit>
+        <xLgr>Rua Fiscal, 1</xLgr>
+        <cMun>1100015</cMun>
+        <xMun>Alta Floresta D Oeste</xMun>
+        <UF>RO</UF>
+        <CEP>76954000</CEP>
+      </enderEmit>
+    </emit>
+    <det nItem="1">
+      <prod>
+        <cProd>ABC</cProd>
+        <cEAN>SEM GTIN</cEAN>
+        <xProd>Produto de teste</xProd>
+        <NCM>12345678</NCM>
+        <CFOP>5102</CFOP>
+        <uCom>UN</uCom>
+        <qCom>1.0000</qCom>
+        <vUnCom>10.0000000000</vUnCom>
+        <vProd>10.00</vProd>
+      </prod>
+    </det>
+    <total>
+      <ICMSTot>
+        <vBC>0.00</vBC>
+        <vICMS>0.00</vICMS>
+        <vProd>10.00</vProd>
+        <vPIS>0.00</vPIS>
+        <vCOFINS>0.00</vCOFINS>
+        <vNF>10.00</vNF>
+      </ICMSTot>
+    </total>
+  </infNFe>
+</NFe>

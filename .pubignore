@@ -1,0 +1,11 @@
+# Artefatos locais de desenvolvimento e inspeção visual.
+build/
+tmp/
+output/
+
+# Documentação HTML gerada por dart doc; a documentação-fonte permanece no
+# pacote e o pub.dev gera a documentação pública a partir da API publicada.
+doc/api/
+
+# O aplicativo Flutter de demonstração tem seu próprio pubspec e pipeline.
+example_flutter/

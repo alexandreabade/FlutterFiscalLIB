@@ -1,0 +1,13 @@
+{
+  "package": "PL_009_V4",
+  "source": "https://github.com/nfephp-org/sped-nfe",
+  "source_commit": "cf0baf0",
+  "file_count": 194,
+  "aggregate_sha256": "81ba92a38f2aefa39450e0c9893071bd906cabf76e5caaef6ba9861def038dc3",
+  "nfe_schema": {
+    "file": "nfe_v4.00.xsd",
+    "sha256": "0ac9d4c146b6db779f4b6a531045899b919d42e1bb87eb96d6f692bb14b8b646"
+  },
+  "license": "LGPL-3.0-or-later",
+  "purpose": "Pacote de schemas fiscais de referência para validação XSD externa e testes de integração."
+}

@@ -1,0 +1,14 @@
+{
+  "package": "PL_010b_NT2025_002_v1.30",
+  "source": "https://dfe-portal.svrs.rs.gov.br/Nfe/Documentos",
+  "download": "PL_010b_NT2025_002_v1.30.zip",
+  "publication": "2025-10-07",
+  "file_count": 5,
+  "aggregate_sha256": "77d71e7b44b2b43ca8d6415ea07738245a91e39761f80f021f090b28d0f77288",
+  "nfe_schema": {
+    "file": "nfe_v4.00.xsd",
+    "sha256": "66a117aaa78687fdb1355fc32a380ec859f3a98e850d7c4de5a07935eb1a6030"
+  },
+  "license": "Schema oficial disponibilizado pelo Portal Nacional da NF-e",
+  "purpose": "Pacote oficial de schemas para os grupos da NT 2025.002-RTC e validação XSD externa."
+}
