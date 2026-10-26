@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'offline_database.dart';
 import 'serpro_trust.dart';
+import 'secure_secret_store.dart';
 
 void main() => runApp(const FiscalExampleApp());
 
@@ -106,17 +108,115 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
     'TO': '17',
   };
   late final Future<ExampleFiscalDatabase> _database;
+  late final Future<void> _settings;
   NfceOfflineQueue? _queue;
   int _pendingCount = 0;
 
   @override
   void initState() {
     super.initState();
+    _settings = _loadSavedSettings();
     _database = openExampleDatabase().then((database) {
       _queue = NfceOfflineQueue(store: DriftFiscalDocumentStore(database));
       _refreshPendingCount();
       return database;
     });
+  }
+
+  Future<File> _settingsFile() async {
+    final directory = await getApplicationSupportDirectory();
+    final file = File('${directory.path}/flutter_fiscal_lib_demo.json');
+    await file.parent.create(recursive: true);
+    return file;
+  }
+
+  Future<void> _loadSavedSettings() async {
+    try {
+      final file = await _settingsFile();
+      if (await file.exists()) {
+        final raw = jsonDecode(await file.readAsString());
+        if (raw is Map<String, dynamic>) {
+          _issuerNameController.text =
+              raw['issuerName'] as String? ?? _issuerNameController.text;
+          _fantasyNameController.text =
+              raw['fantasyName'] as String? ?? _fantasyNameController.text;
+          _issuerCnpjController.text =
+              raw['cnpj'] as String? ?? _issuerCnpjController.text;
+          _issuerIeController.text =
+              raw['ie'] as String? ?? _issuerIeController.text;
+          _uf = raw['uf'] as String? ?? _uf;
+          _addressController.text =
+              raw['address'] as String? ?? _addressController.text;
+          _addressNumberController.text =
+              raw['addressNumber'] as String? ?? _addressNumberController.text;
+          _neighborhoodController.text =
+              raw['neighborhood'] as String? ?? _neighborhoodController.text;
+          _cityCodeController.text =
+              raw['cityCode'] as String? ?? _cityCodeController.text;
+          _cityController.text = raw['city'] as String? ?? _cityController.text;
+          _zipCodeController.text =
+              raw['zipCode'] as String? ?? _zipCodeController.text;
+          _phoneController.text =
+              raw['phone'] as String? ?? _phoneController.text;
+          _emailController.text =
+              raw['email'] as String? ?? _emailController.text;
+          _crtController.text = raw['crt'] as String? ?? _crtController.text;
+          _productController.text =
+              raw['product'] as String? ?? _productController.text;
+          _certificatePathController.text =
+              raw['certificatePath'] as String? ?? '';
+          _cscIdController.text = raw['cscId'] as String? ?? '';
+          _environment = raw['environment'] as int? ?? _environment;
+        }
+      }
+      final password = await const PlatformFiscalSecretStore().read(
+        'demo_certificate_password',
+      );
+      if (password != null) {
+        _certificatePasswordController.text = utf8.decode(password);
+      }
+      if (mounted) setState(() {});
+    } on Object catch (error) {
+      if (mounted) {
+        setState(
+          () => _status = 'Não foi possível restaurar o cadastro: $error',
+        );
+      }
+    }
+  }
+
+  Future<void> _saveDemoSettings() async {
+    final file = await _settingsFile();
+    await file.writeAsString(
+      jsonEncode({
+        'issuerName': _issuerNameController.text,
+        'fantasyName': _fantasyNameController.text,
+        'cnpj': _issuerCnpjController.text,
+        'ie': _issuerIeController.text,
+        'uf': _uf,
+        'address': _addressController.text,
+        'addressNumber': _addressNumberController.text,
+        'neighborhood': _neighborhoodController.text,
+        'cityCode': _cityCodeController.text,
+        'city': _cityController.text,
+        'zipCode': _zipCodeController.text,
+        'phone': _phoneController.text,
+        'email': _emailController.text,
+        'crt': _crtController.text,
+        'product': _productController.text,
+        'certificatePath': _certificatePathController.text,
+        'cscId': _cscIdController.text,
+        'environment': _environment,
+      }),
+      flush: true,
+    );
+    final password = _certificatePasswordController.text;
+    if (password.isNotEmpty) {
+      await const PlatformFiscalSecretStore().write(
+        'demo_certificate_password',
+        Uint8List.fromList(utf8.encode(password)),
+      );
+    }
   }
 
   Future<void> _generateXml() async {
@@ -252,6 +352,7 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
   }
 
   Future<void> _loadCertificate() async {
+    await _settings;
     final path = _certificatePathController.text.trim();
     final password = _certificatePasswordController.text;
     if (path.isEmpty || password.isEmpty) {
@@ -274,8 +375,35 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
           _history.insert(0, 'Certificado A1 carregado em memória');
         });
       }
+      try {
+        await _saveDemoSettings();
+        if (mounted) {
+          setState(() {
+            _status = 'Certificado e cadastro salvos para a próxima execução.';
+          });
+        }
+      } on Object catch (error) {
+        if (mounted) {
+          setState(() {
+            _status =
+                'Certificado carregado, mas não foi possível salvar o cadastro: $error';
+          });
+        }
+      }
     } on Object catch (error) {
       _showMessage('Falha ao carregar certificado: $error');
+    }
+  }
+
+  Future<void> _saveSettingsFromButton() async {
+    try {
+      await _settings;
+      await _saveDemoSettings();
+      if (mounted) {
+        setState(() => _status = 'Cadastro salvo com sucesso.');
+      }
+    } on Object catch (error) {
+      if (mounted) setState(() => _status = 'Falha ao salvar cadastro: $error');
     }
   }
 
@@ -636,6 +764,11 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
             OutlinedButton(
               onPressed: _loadCertificate,
               child: const Text('Carregar certificado A1'),
+            ),
+            OutlinedButton.icon(
+              onPressed: _saveSettingsFromButton,
+              icon: const Icon(Icons.save_outlined),
+              label: const Text('Salvar cadastro e certificado'),
             ),
             OutlinedButton.icon(
               onPressed: _consultServiceStatus,
