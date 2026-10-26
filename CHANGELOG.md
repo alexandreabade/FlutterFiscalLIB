@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1 - 2026-10-26
+
+- Primeira versão incremental após a publicação inicial no pub.dev.
+
 - Adicionado `FiscalCompanyRegistration` e `SefazEndpointCatalog`, com catálogo
   de endpoints/action SOAP por UF, modelo e ambiente, além de geração automática
   do QR Code NFC-e 2.00/3.00; incluído o exemplo
