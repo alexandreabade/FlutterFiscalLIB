@@ -39,6 +39,10 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
   String _xml = 'Toque em “Gerar XML” para criar um documento de teste.';
   String _preview = 'O DANFE HTML aparecerá aqui após gerar o documento.';
   String _status = 'Nenhum certificado carregado.';
+  String _sefazResponseXml = 'Nenhuma resposta XML da SEFAZ.';
+  SefazResult? _sefazResult;
+  int? _sefazHttpStatus;
+  String? _sefazTechnicalError;
   final _history = <String>[];
   final _issuerNameController = TextEditingController(
     text: 'Empresa de Demonstração',
@@ -306,13 +310,17 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
         cUf: company.cUf,
         environment: _environment,
       );
+      final result = SefazResponseParser().parse(response.body);
       if (mounted) {
         setState(() {
-          _status =
-              'Status SEFAZ: HTTP ${response.statusCode} — ${response.body}';
+          _sefazHttpStatus = response.statusCode;
+          _sefazResponseXml = response.body;
+          _sefazResult = result;
+          _sefazTechnicalError = null;
+          _status = _formatSefazResult(response.statusCode, result);
           _history.insert(
             0,
-            'Consulta de status realizada (${_environment == 1 ? 'produção' : 'homologação'})',
+            'Status SEFAZ: cStat ${result.statusCode} — ${result.reason}',
           );
         });
       }
@@ -321,9 +329,43 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
         final detail = error is FiscalException && error.cause != null
             ? '\nDetalhe técnico: ${error.cause}'
             : '';
-        setState(() => _status = 'Falha na consulta de status: $error$detail');
+        setState(() {
+          _sefazResult = null;
+          _sefazTechnicalError = detail.isEmpty ? null : detail.trim();
+          _status = _friendlyErrorMessage(error);
+          _history.insert(0, 'Falha SEFAZ: ${_status.replaceAll('\n', ' ')}');
+        });
       }
     }
+  }
+
+  String _formatSefazResult(int httpStatus, SefazResult result) {
+    final classification = result.isAccepted
+        ? 'aceito'
+        : result.isRejected
+        ? 'rejeitado'
+        : 'não conclusivo';
+    return 'SEFAZ $classification: HTTP $httpStatus — cStat '
+        '${result.statusCode}: ${result.reason}';
+  }
+
+  String _friendlyErrorMessage(Object error) {
+    if (error is FiscalException) {
+      final code = error.code;
+      final message = switch (code) {
+        'SEFAZ_NETWORK_ERROR' =>
+          'Não foi possível conectar à SEFAZ. Verifique internet, firewall, certificado e endpoint.',
+        'SEFAZ_TIMEOUT' =>
+          'A SEFAZ não respondeu no tempo configurado. Consulte o documento antes de reenviar.',
+        'SEFAZ_HTTP_ERROR' =>
+          'A SEFAZ recusou a chamada HTTP. Verifique o endpoint e o ambiente.',
+        'SEFAZ_SOAP_FAULT' =>
+          'A SEFAZ retornou uma falha SOAP. Consulte a aba “Retorno SEFAZ”.',
+        _ => error.message,
+      };
+      return 'Falha na consulta de status [$code]: $message';
+    }
+    return 'Falha na consulta de status: $error';
   }
 
   FiscalCompanyRegistration _companyFromForm() => FiscalCompanyRegistration(
@@ -402,218 +444,329 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('FlutterFiscalLIB')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Configuração da demonstração',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Cadastro completo da empresa',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              TextField(
-                controller: _issuerNameController,
-                decoration: const InputDecoration(labelText: 'Razão social'),
-              ),
-              TextField(
-                controller: _fantasyNameController,
-                decoration: const InputDecoration(labelText: 'Nome fantasia'),
-              ),
-              TextField(
-                controller: _issuerCnpjController,
-                decoration: const InputDecoration(
-                  labelText: 'CNPJ do emitente',
-                ),
-              ),
-              TextField(
-                controller: _issuerIeController,
-                decoration: const InputDecoration(
-                  labelText: 'Inscrição estadual',
-                ),
-              ),
-              DropdownButtonFormField<String>(
-                initialValue: _uf,
-                decoration: const InputDecoration(labelText: 'UF da empresa'),
-                items: _ufCodes.keys
-                    .map(
-                      (uf) => DropdownMenuItem(
-                        value: uf,
-                        child: Text('$uf — cUF ${_ufCodes[uf]}'),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) setState(() => _uf = value);
-                },
-              ),
-              TextField(
-                controller: _addressController,
-                decoration: const InputDecoration(labelText: 'Logradouro'),
-              ),
-              TextField(
-                controller: _addressNumberController,
-                decoration: const InputDecoration(labelText: 'Número'),
-              ),
-              TextField(
-                controller: _neighborhoodController,
-                decoration: const InputDecoration(labelText: 'Bairro'),
-              ),
-              TextField(
-                controller: _cityCodeController,
-                decoration: const InputDecoration(
-                  labelText: 'Código IBGE do município',
-                ),
-              ),
-              TextField(
-                controller: _cityController,
-                decoration: const InputDecoration(labelText: 'Município'),
-              ),
-              TextField(
-                controller: _zipCodeController,
-                decoration: const InputDecoration(labelText: 'CEP'),
-              ),
-              TextField(
-                controller: _phoneController,
-                decoration: const InputDecoration(labelText: 'Telefone'),
-              ),
-              TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'E-mail'),
-              ),
-              TextField(
-                controller: _crtController,
-                decoration: const InputDecoration(
-                  labelText: 'CRT (regime tributário)',
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Dados da NFC-e e certificado',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              TextField(
-                controller: _productController,
-                decoration: const InputDecoration(labelText: 'Produto'),
-              ),
-              DropdownButtonFormField<int>(
-                initialValue: _environment,
-                decoration: const InputDecoration(labelText: 'Ambiente SEFAZ'),
-                items: const [
-                  DropdownMenuItem(value: 2, child: Text('Homologação')),
-                  DropdownMenuItem(value: 1, child: Text('Produção')),
-                ],
-                onChanged: (value) {
-                  if (value != null) setState(() => _environment = value);
-                },
-              ),
-              const Padding(
-                padding: EdgeInsets.only(top: 4),
-                child: Text(
-                  'Homologação é o ambiente recomendado para testes. Produção exige certificado, CSC e autorização fiscal válidos.',
-                  style: TextStyle(fontSize: 12),
-                ),
-              ),
-              TextField(
-                controller: _cscIdController,
-                decoration: const InputDecoration(
-                  labelText: 'ID CSC (opcional)',
-                ),
-              ),
-              TextField(
-                controller: _cscController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'CSC (não persistido)',
-                ),
-              ),
-              TextField(
-                controller: _certificatePathController,
-                readOnly: true,
-                onTap: _selectCertificateFile,
-                decoration: const InputDecoration(
-                  labelText: 'Caminho do certificado A1',
-                ),
-              ),
-              OutlinedButton.icon(
-                onPressed: _selectCertificateFile,
-                icon: const Icon(Icons.folder_open_outlined),
-                label: const Text('Escolher arquivo PFX/P12'),
-              ),
-              TextField(
-                controller: _certificatePasswordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Senha do certificado A1',
-                ),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton(
-                onPressed: _loadCertificate,
-                child: const Text('Carregar certificado A1'),
-              ),
-              OutlinedButton.icon(
-                onPressed: _consultServiceStatus,
-                icon: const Icon(Icons.cloud_outlined),
-                label: const Text('Consultar status do serviço'),
-              ),
-              Text(_status),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: _queue == null ? null : _generateXml,
-                child: const Text('Gerar e persistir NFC-e offline'),
-              ),
-              OutlinedButton(
-                onPressed: _renderDanfe,
-                child: const Text('Visualizar DANFE HTML'),
-              ),
-              OutlinedButton(
-                onPressed: _generateEscPos,
-                child: const Text('Preparar cupom ESC/POS'),
-              ),
-              OutlinedButton(
-                onPressed: _prepareDanfePdf,
-                child: const Text('Preparar PDF DANFE'),
-              ),
-              OutlinedButton(
-                onPressed: () => _showMessage(
-                  'Transmissão real exige endpoint oficial, certificado e autorização de homologação.',
-                ),
-                child: const Text('Transmitir pendentes (opt-in)'),
-              ),
-              const SizedBox(height: 8),
-              Text('Documentos pendentes no SQLite: $_pendingCount'),
-              const SizedBox(height: 12),
-              const Text(
-                'XML da NFC-e',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              SelectableText(_xml),
-              const SizedBox(height: 12),
-              const Text(
-                'Pré-visualização DANFE HTML',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              SelectableText(_preview),
-              const SizedBox(height: 12),
-              const Text(
-                'Histórico da demonstração',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              if (_history.isEmpty)
-                const Text('Nenhum evento registrado.')
-              else
-                for (final entry in _history) Text(entry),
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('FlutterFiscalLIB'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Cadastro'),
+              Tab(text: 'Retorno SEFAZ'),
+              Tab(text: 'Documentos'),
             ],
           ),
+        ),
+        body: TabBarView(
+          children: [
+            _buildConfigurationTab(),
+            _buildSefazResponseTab(),
+            _buildDocumentsTab(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildConfigurationTab() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Configuração da demonstração',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Cadastro completo da empresa',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            TextField(
+              controller: _issuerNameController,
+              decoration: const InputDecoration(labelText: 'Razão social'),
+            ),
+            TextField(
+              controller: _fantasyNameController,
+              decoration: const InputDecoration(labelText: 'Nome fantasia'),
+            ),
+            TextField(
+              controller: _issuerCnpjController,
+              decoration: const InputDecoration(labelText: 'CNPJ do emitente'),
+            ),
+            TextField(
+              controller: _issuerIeController,
+              decoration: const InputDecoration(
+                labelText: 'Inscrição estadual',
+              ),
+            ),
+            DropdownButtonFormField<String>(
+              initialValue: _uf,
+              decoration: const InputDecoration(labelText: 'UF da empresa'),
+              items: _ufCodes.keys
+                  .map(
+                    (uf) => DropdownMenuItem(
+                      value: uf,
+                      child: Text('$uf — cUF ${_ufCodes[uf]}'),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                if (value != null) setState(() => _uf = value);
+              },
+            ),
+            TextField(
+              controller: _addressController,
+              decoration: const InputDecoration(labelText: 'Logradouro'),
+            ),
+            TextField(
+              controller: _addressNumberController,
+              decoration: const InputDecoration(labelText: 'Número'),
+            ),
+            TextField(
+              controller: _neighborhoodController,
+              decoration: const InputDecoration(labelText: 'Bairro'),
+            ),
+            TextField(
+              controller: _cityCodeController,
+              decoration: const InputDecoration(
+                labelText: 'Código IBGE do município',
+              ),
+            ),
+            TextField(
+              controller: _cityController,
+              decoration: const InputDecoration(labelText: 'Município'),
+            ),
+            TextField(
+              controller: _zipCodeController,
+              decoration: const InputDecoration(labelText: 'CEP'),
+            ),
+            TextField(
+              controller: _phoneController,
+              decoration: const InputDecoration(labelText: 'Telefone'),
+            ),
+            TextField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(labelText: 'E-mail'),
+            ),
+            TextField(
+              controller: _crtController,
+              decoration: const InputDecoration(
+                labelText: 'CRT (regime tributário)',
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Dados da NFC-e e certificado',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            TextField(
+              controller: _productController,
+              decoration: const InputDecoration(labelText: 'Produto'),
+            ),
+            DropdownButtonFormField<int>(
+              initialValue: _environment,
+              decoration: const InputDecoration(labelText: 'Ambiente SEFAZ'),
+              items: const [
+                DropdownMenuItem(value: 2, child: Text('Homologação')),
+                DropdownMenuItem(value: 1, child: Text('Produção')),
+              ],
+              onChanged: (value) {
+                if (value != null) setState(() => _environment = value);
+              },
+            ),
+            const Padding(
+              padding: EdgeInsets.only(top: 4),
+              child: Text(
+                'Homologação é o ambiente recomendado para testes. Produção exige certificado, CSC e autorização fiscal válidos.',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+            TextField(
+              controller: _cscIdController,
+              decoration: const InputDecoration(labelText: 'ID CSC (opcional)'),
+            ),
+            TextField(
+              controller: _cscController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'CSC (não persistido)',
+              ),
+            ),
+            TextField(
+              controller: _certificatePathController,
+              readOnly: true,
+              onTap: _selectCertificateFile,
+              decoration: const InputDecoration(
+                labelText: 'Caminho do certificado A1',
+              ),
+            ),
+            OutlinedButton.icon(
+              onPressed: _selectCertificateFile,
+              icon: const Icon(Icons.folder_open_outlined),
+              label: const Text('Escolher arquivo PFX/P12'),
+            ),
+            TextField(
+              controller: _certificatePasswordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Senha do certificado A1',
+              ),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: _loadCertificate,
+              child: const Text('Carregar certificado A1'),
+            ),
+            OutlinedButton.icon(
+              onPressed: _consultServiceStatus,
+              icon: const Icon(Icons.cloud_outlined),
+              label: const Text('Consultar status do serviço'),
+            ),
+            Text(
+              _status,
+              style: TextStyle(
+                color: _sefazResult?.isRejected == true
+                    ? Colors.red.shade800
+                    : null,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _queue == null ? null : _generateXml,
+              child: const Text('Gerar e persistir NFC-e offline'),
+            ),
+            OutlinedButton(
+              onPressed: _renderDanfe,
+              child: const Text('Visualizar DANFE HTML'),
+            ),
+            OutlinedButton(
+              onPressed: _generateEscPos,
+              child: const Text('Preparar cupom ESC/POS'),
+            ),
+            OutlinedButton(
+              onPressed: _prepareDanfePdf,
+              child: const Text('Preparar PDF DANFE'),
+            ),
+            OutlinedButton(
+              onPressed: () => _showMessage(
+                'Transmissão real exige endpoint oficial, certificado e autorização de homologação.',
+              ),
+              child: const Text('Transmitir pendentes (opt-in)'),
+            ),
+            const SizedBox(height: 8),
+            Text('Documentos pendentes no SQLite: $_pendingCount'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSefazResponseTab() {
+    final result = _sefazResult;
+    final statusColor = result == null
+        ? null
+        : result.isAccepted
+        ? Colors.green.shade800
+        : result.isRejected
+        ? Colors.red.shade800
+        : Colors.orange.shade800;
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Retorno da SEFAZ',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: result == null
+                    ? Text(_status)
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            result.isAccepted
+                                ? 'Operação aceita'
+                                : result.isRejected
+                                ? 'Operação rejeitada'
+                                : 'Retorno não conclusivo',
+                            style: TextStyle(
+                              color: statusColor,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text('HTTP: ${_sefazHttpStatus ?? '-'}'),
+                          Text('cStat: ${result.statusCode}'),
+                          Text('Motivo: ${result.reason}'),
+                        ],
+                      ),
+              ),
+            ),
+            if (_sefazTechnicalError != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Detalhe técnico: $_sefazTechnicalError',
+                style: TextStyle(color: Colors.red.shade800),
+              ),
+            ],
+            const SizedBox(height: 16),
+            const Text(
+              'XML retornado pela SEFAZ',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
+            SelectableText(_sefazResponseXml),
+            const SizedBox(height: 16),
+            const Text(
+              'Histórico da demonstração',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            if (_history.isEmpty)
+              const Text('Nenhum evento registrado.')
+            else
+              for (final entry in _history) Text(entry),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDocumentsTab() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Documentos gerados',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'XML da NFC-e',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SelectableText(_xml),
+            const SizedBox(height: 16),
+            const Text(
+              'Pré-visualização DANFE HTML',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SelectableText(_preview),
+          ],
         ),
       ),
     );
