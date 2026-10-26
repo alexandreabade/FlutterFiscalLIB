@@ -22,7 +22,7 @@ class FiscalExampleApp extends StatelessWidget {
   }
 }
 
-/// Tela que gera e exibe um XML de homologação.
+/// Tela que gera e exibe um XML de demonstração.
 class FiscalHomePage extends StatefulWidget {
   /// Cria a tela principal.
   const FiscalHomePage({super.key});
@@ -48,6 +48,7 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
   final _cscIdController = TextEditingController();
   final _cscController = TextEditingController();
   NfeDocument? _document;
+  int _environment = 2;
   late final Future<ExampleFiscalDatabase> _database;
   NfceOfflineQueue? _queue;
   int _pendingCount = 0;
@@ -87,7 +88,7 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
       number: documentNumber,
       series: 1,
       issueDate: issueDate,
-      environment: 2,
+      environment: _environment,
       model: 65,
       operationNature: 'Venda de mercadoria',
       documentType: 1,
@@ -288,6 +289,24 @@ class _FiscalHomePageState extends State<FiscalHomePage> {
               TextField(
                 controller: _productController,
                 decoration: const InputDecoration(labelText: 'Produto'),
+              ),
+              DropdownButtonFormField<int>(
+                initialValue: _environment,
+                decoration: const InputDecoration(labelText: 'Ambiente SEFAZ'),
+                items: const [
+                  DropdownMenuItem(value: 2, child: Text('Homologação')),
+                  DropdownMenuItem(value: 1, child: Text('Produção')),
+                ],
+                onChanged: (value) {
+                  if (value != null) setState(() => _environment = value);
+                },
+              ),
+              const Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: Text(
+                  'Homologação é o ambiente recomendado para testes. Produção exige certificado, CSC e autorização fiscal válidos.',
+                  style: TextStyle(fontSize: 12),
+                ),
               ),
               TextField(
                 controller: _cscIdController,
