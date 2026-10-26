@@ -5,6 +5,8 @@
 - A fachada `Tools` passou a cobrir os eventos NFePHP de insucesso na entrega
   (`110192`/`110193`) e conciliação financeira (`110750`/`110751`), com
   builders tipados e validações próprias.
+- O comprovante de entrega passou a suportar também o cancelamento `110131`,
+  com protocolo obrigatório e teste específico.
 - Corrigido o renderer HTML para que `showItemAdditionalInfo: false` também
   oculte dados de medicação, mantendo a mesma semântica do PDF.
 - O renderer HTML passou a expor `showItemAdditionalInfo` e

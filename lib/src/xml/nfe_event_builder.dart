@@ -351,6 +351,8 @@ class NfeEventBuilder {
     String? longitude,
     DateTime? hashDate,
     DateTime? eventDate,
+    bool cancel = false,
+    String? protocol,
   }) {
     _validateEvent(
       accessKey: accessKey,
@@ -370,38 +372,52 @@ class NfeEventBuilder {
         code: 'INVALID_DELIVERY_DATA',
       );
     }
-    try {
-      if (base64Decode(hashComprovante).length != 20) {
-        throw const FormatException();
-      }
-    } on FormatException catch (error) {
-      throw FiscalValidationException(
-        'hashComprovante deve ser SHA-1 em Base64 com 20 bytes.',
-        code: 'INVALID_DELIVERY_HASH',
-        cause: error,
+    if (cancel && (protocol == null || protocol.trim().isEmpty)) {
+      throw const FiscalValidationException(
+        'O protocolo é obrigatório para cancelar o comprovante de entrega.',
+        code: 'INVALID_DELIVERY_PROTOCOL',
       );
     }
-    _validateGps(latitude, longitude);
+    if (!cancel) {
+      try {
+        if (base64Decode(hashComprovante).length != 20) {
+          throw const FormatException();
+        }
+      } on FormatException catch (error) {
+        throw FiscalValidationException(
+          'hashComprovante deve ser SHA-1 em Base64 com 20 bytes.',
+          code: 'INVALID_DELIVERY_HASH',
+          cause: error,
+        );
+      }
+    }
+    if (!cancel) _validateGps(latitude, longitude);
     return _event(
       accessKey: accessKey,
       cOrgao: cOrgao,
       environment: environment,
       issuerCnpj: issuerCnpj,
-      eventType: '110130',
+      eventType: cancel ? '110131' : '110130',
       sequence: 1,
       date: eventDate,
-      description: 'Comprovante de Entrega da NF-e',
+      description: cancel
+          ? 'Cancelamento do Comprovante de Entrega da NF-e'
+          : 'Comprovante de Entrega da NF-e',
       details: [
-        _text('cOrgaoAutor', cOrgao.toString().padLeft(2, '0')),
-        _text('tpAutor', '1'),
-        _text('verAplic', applicationVersion.trim()),
-        _text('dhEntrega', _dateTime(deliveryDate)),
-        _text('nDoc', documentNumber.trim()),
-        _text('xNome', recipientName.trim()),
-        if (latitude != null) _text('latGPS', latitude),
-        if (longitude != null) _text('longGPS', longitude),
-        _text('hashComprovante', hashComprovante),
-        if (hashDate != null) _text('dhHashComprovante', _dateTime(hashDate)),
+        if (cancel)
+          _text('nProtEvento', protocol!.trim())
+        else ...[
+          _text('cOrgaoAutor', cOrgao.toString().padLeft(2, '0')),
+          _text('tpAutor', '1'),
+          _text('verAplic', applicationVersion.trim()),
+          _text('dhEntrega', _dateTime(deliveryDate)),
+          _text('nDoc', documentNumber.trim()),
+          _text('xNome', recipientName.trim()),
+          if (latitude != null) _text('latGPS', latitude),
+          if (longitude != null) _text('longGPS', longitude),
+          _text('hashComprovante', hashComprovante),
+          if (hashDate != null) _text('dhHashComprovante', _dateTime(hashDate)),
+        ],
       ],
     );
   }

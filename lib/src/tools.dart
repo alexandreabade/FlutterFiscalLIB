@@ -609,6 +609,8 @@ class Tools {
     String? longitude,
     DateTime? hashDate,
     DateTime? eventDate,
+    bool cancel = false,
+    String? protocol,
   }) async {
     final event = NfeEventBuilder().comprovanteEntrega(
       accessKey: accessKey,
@@ -624,6 +626,8 @@ class Tools {
       longitude: longitude,
       hashDate: hashDate,
       eventDate: eventDate,
+      cancel: cancel,
+      protocol: protocol,
     );
     return _sendEvent(event);
   }

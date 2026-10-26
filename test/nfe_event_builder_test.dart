@@ -135,6 +135,26 @@ void main() {
     expect(xml, contains('<latGPS>-8.761234</latGPS>'));
   });
 
+  test('monta cancelamento do comprovante de entrega', () {
+    final xml = NfeEventBuilder().comprovanteEntrega(
+      accessKey: key,
+      cOrgao: 11,
+      environment: 2,
+      issuerCnpj: '04252011000110',
+      applicationVersion: '1.0.0',
+      deliveryDate: DateTime.utc(2026, 1, 2),
+      documentNumber: 'RG123456',
+      recipientName: 'Pessoa Recebedora',
+      hashComprovante: '',
+      cancel: true,
+      protocol: '123456789012345',
+    );
+
+    expect(xml, contains('<tpEvento>110131</tpEvento>'));
+    expect(xml, contains('<nProtEvento>123456789012345</nProtEvento>'));
+    expect(xml, isNot(contains('<hashComprovante>')));
+  });
+
   test('monta evento de ator interessado com autorização de download', () {
     final xml = NfeEventBuilder().atorInteressado(
       accessKey: key,
